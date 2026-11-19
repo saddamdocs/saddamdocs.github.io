@@ -1,0 +1,59 @@
+{
+  "rules": {
+    "tamandua": {
+      "$key": {
+        "info": {
+          ".read": "$key.length >= 32",
+          ".write": "$key.length >= 32 && !data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['format', 'salt', 'check', 'created'])",
+          "format":  { ".validate": "newData.val() === 1" },
+          "salt":    { ".validate": "newData.isString() && newData.val().length <= 64" },
+          "check":   { ".validate": "newData.isString() && newData.val().length <= 512" },
+          "created": { ".validate": "newData.val() === now" },
+          "$other":  { ".validate": false }
+        },
+        "moved": {
+          ".read": "$key.length >= 32",
+          ".write": "$key.length >= 32 && !data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['ts', 'check'])",
+          "ts":     { ".validate": "newData.val() === now" },
+          "check":  { ".validate": "newData.isString() && newData.val().length <= 512" },
+          "$other": { ".validate": false }
+        },
+        "head": {
+          ".read": "$key.length >= 32",
+          ".write": "$key.length >= 32 && newData.exists()",
+          ".validate": "newData.hasChildren(['ts', 'id', 'rev'])",
+          "ts":     { ".validate": "newData.val() === now" },
+          "id":     { ".validate": "newData.isString() && newData.val().length <= 40" },
+          "rev":    { ".validate": "newData.isNumber()" },
+          "$other": { ".validate": false }
+        },
+        "items": {
+          ".read": "$key.length >= 32",
+          ".indexOn": ["ts"],
+          "$id": {
+            ".write": "$key.length >= 32 && $id.length >= 16 && $id.length <= 40 && newData.exists()",
+            ".validate": "newData.hasChildren(['rev', 'ts', 'kind', 'enc', 'meta']) && ((!data.exists() && newData.child('rev').val() === 1) || (data.exists() && newData.child('rev').val() === data.child('rev').val() + 1 && newData.child('kind').val() === data.child('kind').val()))",
+            "rev":     { ".validate": "newData.isNumber()" },
+            "ts":      { ".validate": "newData.val() === now" },
+            "kind":    { ".validate": "newData.val() === 'note' || newData.val() === 'folder' || newData.val() === 'file' || newData.val() === 'settings'" },
+            "enc":     { ".validate": "newData.val() === 1" },
+            "meta":    { ".validate": "newData.isString() && newData.val().length <= 8192" },
+            "body":    { ".validate": "newData.isString() && newData.val().length <= 7000000" },
+            "size":    { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 7000000" },
+            "deleted": { ".validate": "newData.val() === true" },
+            "$other":  { ".validate": false }
+          }
+        },
+        "blobs": {
+          "$id": {
+            ".read": "$key.length >= 32",
+            ".write": "$key.length >= 32 && $id.length >= 16 && $id.length <= 40 && (!data.exists() || !newData.exists())",
+            ".validate": "newData.isString() && newData.val().length <= 9500000"
+          }
+        }
+      }
+    }
+  }
+}

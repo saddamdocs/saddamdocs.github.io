@@ -1,0 +1,65 @@
+/*
+ * Global styles of the page: the base element styles, buttons and the focus ring of PLAN 4.9.
+ * Colours come only from the theme variables that `settings/themes.ts` sets on the root.
+ * M1 adds the fonts (`--font-ui`, `--font-text`, `--font-mono`) and the shell's layout.
+ */
+
+:root {
+  /* PLAN 4.9: no dark theme, and no dark styling may leak into scrollbars or form controls. */
+  color-scheme: light;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--paper);
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+::selection {
+  background: var(--selection);
+}
+
+a {
+  color: var(--text);
+  text-decoration: underline 2px var(--accent);
+  text-underline-offset: 3px;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 6px 14px;
+}
+
+button.primary {
+  background: var(--dark);
+  color: var(--on-dark);
+  border: 1px solid var(--dark);
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--text-muted);
+}
+
+button.secondary:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+input[type='checkbox'] {
+  accent-color: var(--dark);
+}
+
+/* PLAN 4.9: a 2 px dark outline with a 2 px gold ring outside it, on every focusable element. */
+:focus-visible {
+  outline: 2px solid var(--dark);
+  outline-offset: 0;
+  box-shadow: 0 0 0 4px var(--accent);
+}

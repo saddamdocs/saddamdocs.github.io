@@ -1,0 +1,12 @@
+# PLAN.md is Felipe's document; its formatting is his.
+PLAN.md
+# Must stay byte for byte what Felipe publishes to the databases (Appendix B).
+database.rules.json
+docs/reference/
+dist/
+dist-emulator/
+public/icons/
+package-lock.json
+test-results/
+playwright-report/
+coverage/

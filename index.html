@@ -1,0 +1,38 @@
+<!doctype html>
+<!--
+  The app's only page. Values in %TAMANDUA_…% placeholders are filled in by vite.config.ts from
+  channel.ts (name), csp.ts (content security policy, PLAN 5.9) and themes.ts (splash colours).
+  There are no inline scripts; the inline style only paints the splash before the app loads
+  (PLAN 5.10, "Start-up").
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="%TAMANDUA_CSP%" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="%TAMANDUA_THEME_COLOR%" />
+    <title>%TAMANDUA_APP_NAME%</title>
+    <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/icons/icon-32.png" sizes="32x32" type="image/png" />
+    <style>
+      html {
+        color-scheme: light;
+        background: %TAMANDUA_PAPER%;
+      }
+      #splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: %TAMANDUA_PAPER%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="splash"><img src="/icons/favicon.svg" width="128" height="128" alt="" /></div>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

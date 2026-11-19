@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Tamanduá-bandeira (giant anteater) icon, maskable variant: full-bleed background,
+       drawing scaled to 82% so it stays inside the central safe circle (radius 40% of the size) -->
+  <defs>
+    <path id="bodyShape" d="M165 240 C200 215 270 212 330 222 C360 226 380 238 400 252 C438 272 474 288 492 310 C498 318 494 328 486 326 C464 314 432 304 404 302 C378 300 360 310 352 325 C340 345 300 352 255 352 C210 352 175 340 160 318 C145 295 145 258 165 240 Z"/>
+    <path id="frontLeg" d="M294 318 C290 350 292 378 296 394 C293 403 298 410 308 410 L346 410 C355 410 355 399 346 397 L334 395 C334 372 338 345 340 322 Z"/>
+    <clipPath id="bodyClip"><use href="#bodyShape"/></clipPath>
+    <clipPath id="frontLegClip"><use href="#frontLeg"/></clipPath>
+  </defs>
+  <rect width="512" height="512" fill="#1F3A34"/>
+  <g transform="translate(256 256) scale(0.82) translate(-256 -256)">
+  <g transform="translate(256 256) scale(0.864) translate(-224 -316)">
+
+    <!-- banner tail: long hair hanging down in a fringe -->
+    <path d="M170 250 C118 230 30 234 -36 264 C-46 284 -40 312 -28 334 Q-18 352 -8 340 Q4 366 16 350 Q28 374 40 352 Q52 374 64 350 Q76 372 88 348 Q100 368 112 346 Q124 364 136 342 Q148 352 152 324 C158 304 162 284 174 270 Z" fill="#E9DCC3"/>
+
+    <!-- far-side legs -->
+    <path d="M200 312 C197 346 203 376 210 396 C208 402 212 404 218 404 L244 404 C251 404 251 396 244 395 L238 394 C239 368 243 342 247 320 Z" fill="#CFC0A3"/>
+    <path d="M338 316 C335 348 337 374 340 390 C338 398 342 402 350 402 L376 402 C383 402 383 393 376 392 L368 391 C368 366 370 340 372 314 Z" fill="#CFC0A3"/>
+
+    <!-- ear -->
+    <ellipse cx="352" cy="230" rx="11" ry="14" fill="#E9DCC3"/>
+
+    <!-- body, neck, head and long snout; deep sagging belly -->
+    <use href="#bodyShape" fill="#F2E6CF"/>
+
+    <!-- dark band: from the bottom of the neck up over the shoulder, tapering on the back -->
+    <path clip-path="url(#bodyClip)" d="M320 364 L374 318 C344 280 304 242 262 233 C240 228 222 228 198 233 C250 248 292 300 320 364 Z" fill="#1F3A34"/>
+
+    <!-- near hind leg: thick thigh, flat plantigrade foot -->
+    <path d="M158 294 C153 334 165 370 174 394 C171 404 176 410 186 410 L224 410 C233 410 233 400 224 398 L212 396 C214 370 222 340 228 312 Z" fill="#F2E6CF"/>
+
+    <!-- near front leg: heavy forearm, knuckle-walking fist -->
+    <use href="#frontLeg" fill="#F2E6CF"/>
+    <!-- dark wrist patch -->
+    <rect clip-path="url(#frontLegClip)" x="280" y="364" width="80" height="20" fill="#1F3A34"/>
+    <!-- folded claw -->
+    <path d="M326 404 Q338 398 346 404" fill="none" stroke="#1F3A34" stroke-width="3.5" stroke-linecap="round"/>
+
+    <!-- eye -->
+    <circle cx="392" cy="262" r="5.5" fill="#1F3A34"/>
+  </g>
+  </g>
+</svg>

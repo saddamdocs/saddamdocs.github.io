@@ -1,0 +1,51 @@
+# Deploy the next channel (PLAN 9): on every push to main, and by hand. Builds `npm run build:next`
+# and publishes it to GitHub Pages at NEXT_URL (https://saddamdocs.github.io).
+# The stable channel is never deployed from here: Felipe deploys it from the stable repository.
+name: Deploy next
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deployments overlap; let a running one finish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build the next channel
+        run: npm run build:next
+      - name: Check origins and size
+        run: |
+          npm run check:origins -- next
+          npm run check:size
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
