@@ -1,0 +1,96 @@
+# CI (PLAN 9, "Workflows in the source repository"): runs on every pull request and every push to
+# main. Two jobs:
+# - check: types, Svelte, lint, format, unit tests, both builds with the remote-origin check and
+#   the size budgets;
+# - emulator-ui: rules tests in the Realtime Database emulator, then Playwright (Chromium) against
+#   the built next channel and the emulator build.
+# M3 adds the sync tests, the simulation and the recovery tool's test. No secrets are used.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: npm run check (tsc, svelte-check, eslint, prettier)
+        run: npm run check
+      - name: Unit tests
+        run: npm run test:unit
+      - name: Build stable, check origins and size
+        run: |
+          npm run build:stable
+          npm run check:origins -- stable
+          npm run check:size
+      - name: Build next, check origins and size
+        run: |
+          npm run build:next
+          npm run check:origins -- next
+          npm run check:size
+
+  emulator-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - name: Versions for the cache keys
+        id: versions
+        run: |
+          echo "playwright=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+          echo "firebase=$(node -p "require('firebase-tools/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache the database emulator
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ steps.versions.outputs.firebase }}
+      - name: Cache Playwright's Chromium
+        id: pw-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.versions.outputs.playwright }}
+      - name: Install Playwright's Chromium
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Install Chromium's system libraries
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+      - name: Rules tests (emulator)
+        run: npm run test:rules
+      - name: UI tests (Playwright, emulator)
+        run: npm run test:ui
+      - name: Keep the Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

@@ -1,0 +1,58 @@
+# Release (PLAN 9): on every vX.Y.Z tag, build the stable channel from the tag, zip it as
+# tamandua-stable.zip, and attach the zip and its SHA-256 to the GitHub Release of that tag.
+# It deploys nothing: Felipe runs "Deploy stable" in the stable repository with the tag.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Check the tag
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tag $TAG is not of the form vX.Y.Z"
+            exit 1
+          fi
+          VERSION="v$(node -p "require('./package.json').version")"
+          if [[ "$TAG" != "$VERSION" ]]; then
+            echo "::error::Tag $TAG does not match package.json version $VERSION"
+            exit 1
+          fi
+      - name: Checks and unit tests
+        run: |
+          npm run check
+          npm run test:unit
+      - name: Build the stable channel
+        run: |
+          npm run build:stable
+          npm run check:origins -- stable
+          npm run check:size
+      - name: Zip and checksum
+        run: |
+          (cd dist && zip -q -r -X ../tamandua-stable.zip .)
+          sha256sum tamandua-stable.zip > tamandua-stable.zip.sha256
+          cat tamandua-stable.zip.sha256
+      - name: Create the release
+        env:
+          TAG: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/release-notes.ts "$TAG" "$(cut -d' ' -f1 tamandua-stable.zip.sha256)" > notes.md
+          gh release create "$TAG" tamandua-stable.zip tamandua-stable.zip.sha256 \
+            --title "Tamanduá $TAG" --notes-file notes.md --verify-tag
