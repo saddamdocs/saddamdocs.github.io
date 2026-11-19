@@ -119,6 +119,17 @@ What is built and proven locally:
   offline reload serves the app, a navigation to `/?probe` works offline, and every cache name
   starts with `tamandua-next`.
 
+Done on 19 November 2026:
+
+- PR #1 merged; CI green (check 35 s, emulator-ui 1 min 24 s); "Deploy next" published NEXT_URL.
+  A headless Chromium run against the live NEXT_URL: the service worker controls the page, the only
+  cache is `tamandua-next-precache-v2-https://saddamdocs.github.io/`, and an offline reload and an
+  offline navigation to `/?probe` both work.
+- Tag `v0.0.1` → release with `tamandua-stable.zip` and its SHA-256, notes stating schema
+  version 1. The stable workflow's download-and-verify steps, run locally against the public release
+  URL, passed: checksum OK, a stable build (title "Tamanduá"), no probe chunk.
+- PR #2 (version 0.0.2 only) merged; tag `v0.0.2` → release.
+
 Still to be filled in from Felipe's checks: the next channel live at NEXT_URL; `v0.0.1` and
 `v0.0.2` deployed to STABLE_URL; both apps installed side by side; the update prompt on stable;
 `v0.0.1` put back; the same on Windows.
