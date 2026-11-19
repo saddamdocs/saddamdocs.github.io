@@ -1,0 +1,19 @@
+{
+  // Type checking for the app (src/) and the tests that run in the browser or in Vitest.
+  // Build-time code (vite.config.ts, scripts/) is checked by tsconfig.node.json.
+  "extends": "@tsconfig/svelte/tsconfig.json",
+  "compilerOptions": {
+    "target": "es2022",
+    "lib": ["es2023", "dom", "dom.iterable", "webworker.importscripts"],
+    "types": ["vite/client", "vite-plugin-pwa/vanillajs"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.svelte", "tests/unit/**/*.ts"]
+}
