@@ -1,6 +1,6 @@
 {
   "name": "tamandua",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "description": "Tamanduá: an offline-first Markdown notes web app with live preview and encrypted sync.",
   "license": "UNLICENSED",
