@@ -134,7 +134,7 @@ Still to be filled in from Felipe's checks: the next channel live at NEXT_URL; `
 `v0.0.2` deployed to STABLE_URL; both apps installed side by side; the update prompt on stable;
 `v0.0.1` put back; the same on Windows.
 
-### Spike B: shortcuts (automated part done; Brave results pending)
+### Spike B: shortcuts (Fedora tab done; installed window and Windows pending)
 
 The probe page (`NEXT_URL/?probe`, next channel only) lists every row of PLAN 4.12 with its
 fallback, marks each combination whose `keydown` reaches the page, cancels it with
@@ -146,6 +146,19 @@ the browser's own shortcut handling. Only Felipe's run in a Brave tab and in the
 on Fedora and Windows, answers it. Expected from Chromium's behaviour: every primary reaches the
 page (none is on the reserved list of PLAN 4.12), with Ctrl+O, Ctrl+S, Ctrl+P, Ctrl+F, Ctrl+H and
 Ctrl+E cancelled by the page. PLAN 4.12 will be updated from the results.
+
+Results, one JSON file per run in `docs/spike-b/`:
+
+| Run                    | Date        | Brave       | Primaries reached | Fallbacks reached | Brave also acted |
+| ---------------------- | ----------- | ----------- | ----------------- | ----------------- | ---------------- |
+| Fedora, tab            | 20 Nov 2026 | 157 (Linux) | 29 of 29          | 13 of 13          | none             |
+| Fedora, installed app  | pending     |             |                   |                   |                  |
+| Windows, tab           | pending     |             |                   |                   |                  |
+| Windows, installed app | pending     |             |                   |                   |                  |
+
+In a Fedora tab, every shortcut of PLAN 4.12 reaches the page and the page's `preventDefault`
+stops Brave's own action (Ctrl+O, Ctrl+S, Ctrl+P, Ctrl+F, Ctrl+H, Ctrl+E included). No fallback is
+needed there.
 
 ### Spike C: test tooling on Fedora (done)
 

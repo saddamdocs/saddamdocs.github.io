@@ -18,20 +18,20 @@ and neither site on a "clear data on exit" list (PLAN 1.6).
 
 ### Fedora
 
-- [ ] **F-M0-1 Next opens.** Open NEXT_URL in a Brave tab. It shows the anteater icon,
+- [x] **F-M0-1 Next opens.** Open NEXT_URL in a Brave tab. It shows the anteater icon,
       "Tamanduá (next)", version 0.0.x, channel `next`, "Online", and a link to the probe. Within a
       few seconds the snackbar says "Tamanduá is ready to work offline".
-- [ ] **F-M0-2 Install next.** Brave menu → "Install Tamanduá (next)" (in recent Brave: menu →
+- [x] **F-M0-2 Install next.** Brave menu → "Install Tamanduá (next)" (in recent Brave: menu →
       "Save and share" or "Cast, save and share" → "Install page as app"). A window opens with a
       cream title bar, and "Tamanduá (next)" appears in the GNOME app grid with the anteater icon.
-- [ ] **F-M0-3 Offline.** Turn the network off (Wi-Fi off, or unplug). Close the installed window and
+- [x] **F-M0-3 Offline.** Turn the network off (Wi-Fi off, or unplug). Close the installed window and
       open it again from the app grid. It opens and says "Offline: the app still opens from this
       device." Turn the network back on.
-- [ ] **F-M0-4 Shortcut probe, tab.** In a Brave tab, open NEXT_URL/?probe. Press every shortcut in
+- [x] **F-M0-4 Shortcut probe, tab.** In a Brave tab, open NEXT_URL/?probe. Press every shortcut in
       the table once, primary and fallback. Where Brave did something of its own (a menu, a dialog,
       a new tab, a bookmark star, the downloads page), tick "Brave also acted". Press "Copy results"
       and paste the JSON into the chat.
-- [ ] **F-M0-5 Shortcut probe, installed window.** In the installed "Tamanduá (next)" window, click
+- [x] **F-M0-5 Shortcut probe, installed window.** In the installed "Tamanduá (next)" window, click
       "Open the shortcut and database probe" and repeat F-M0-4. "Display mode" must say
       "standalone (installed app)". Copy and paste the results.
 - [ ] **F-M0-6 Database probe (spike D).** On the probe page, press "Send the probe request".
