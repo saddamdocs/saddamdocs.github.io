@@ -1,0 +1,241 @@
+{
+  "probe": "spike-b",
+  "version": "0.0.2",
+  "commit": "3c24999",
+  "displayMode": "standalone (installed app)",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/158.0.0.0 Safari/537.36",
+  "rows": [
+    {
+      "action": "New note",
+      "primary": "Alt+N",
+      "primaryReached": true,
+      "fallback": null,
+      "fallbackReached": null,
+      "browserActed": false
+    },
+    {
+      "action": "Quick switcher",
+      "primary": "Ctrl+O",
+      "primaryReached": true,
+      "fallback": "Alt+O",
+      "fallbackReached": true,
+      "browserActed": false
+    },
+    {
+      "action": "Close tab",
+      "primary": "Alt+W",
+      "primaryReached": true,
+      "fallback": "Alt+Shift+W",
+      "fallbackReached": true,
+      "browserActed": false
+    },
+    {
+      "action": "Next tab in pane",
+      "primary": "Alt+PageDown",
+      "primaryReached": true,
+      "fallback": "Alt+Shift+Right",
+      "fallbackReached": true,
+      "browserActed": false
+    },
+    {
+      "action": "Previous tab in pane",
+      "primary": "Alt+PageUp",
+      "primaryReached": true,
+      "fallback": "Alt+Shift+Left",
+      "fallbackReached": true,
+      "browserActed": false
+    },
+    {
+      "action": "Split right / close split",
+      "primary": "Ctrl+Shift+\\",
+      "primaryReached": true,
+      "fallback": "Alt+\\",
+      "fallbackReached": true,
+      "browserActed": false
+    },
+    {
+      "action": "Focus left pane",
+      "primary": "Alt+1",
+      "primaryReached": true,
+      "fallback": "Alt+Shift+1",
+      "fallbackReached": true,
+      "browserActed": false
+    },
+    {
+      "action": "Focus right pane",
+      "primary": "Alt+2",
+      "primaryReached": true,
+      "fallback": "Alt+Shift+2",
+      "fallbackReached": true,
+      "browserActed": false
+    },
+    {
+      "action": "Save now and sync now",
+      "primary": "Ctrl+S",
+      "primaryReached": true,
+      "fallback": null,
+      "fallbackReached": null,
+      "browserActed": false
+    },
+    {
+      "action": "Live preview / source mode",
+      "primary": "Ctrl+E",
+      "primaryReached": true,
+      "fallback": "Alt+Shift+E",
+      "fallbackReached": true,
+      "browserActed": false
+    },
+    {
+      "action": "Find in note",
+      "primary": "Ctrl+F",
+      "primaryReached": true,
+      "fallback": null,
+      "fallbackReached": null,
+      "browserActed": false
+    },
+    {
+      "action": "Replace in note",
+      "primary": "Ctrl+H",
+      "primaryReached": true,
+      "fallback": null,
+      "fallbackReached": null,
+      "browserActed": false
+    },
+    {
+      "action": "Search all notes",
+      "primary": "Ctrl+Shift+F",
+      "primaryReached": true,
+      "fallback": "Alt+Shift+F",
+      "fallbackReached": true,
+      "browserActed": false
+    },
+    {
+      "action": "Export to PDF",
+      "primary": "Ctrl+P",
+      "primaryReached": true,
+      "fallback": null,
+      "fallbackReached": null,
+      "browserActed": false
+    },
+    {
+      "action": "Calendar",
+      "primary": "Alt+C",
+      "primaryReached": true,
+      "fallback": null,
+      "fallbackReached": null,
+      "browserActed": false
+    },
+    {
+      "action": "Text colour",
+      "primary": "Alt+T",
+      "primaryReached": true,
+      "fallback": null,
+      "fallbackReached": null,
+      "browserActed": false
+    },
+    {
+      "action": "Settings",
+      "primary": "Ctrl+,",
+      "primaryReached": true,
+      "fallback": "Alt+,",
+      "fallbackReached": true,
+      "browserActed": false
+    },
+    {
+      "action": "Show or hide sidebar",
+      "primary": "Ctrl+\\",
+      "primaryReached": true,
+      "fallback": "Alt+Shift+\\",
+      "fallbackReached": true,
+      "browserActed": false
+    },
+    {
+      "action": "Bold",
+      "primary": "Ctrl+B",
+      "primaryReached": true,
+      "fallback": null,
+      "fallbackReached": null,
+      "browserActed": false
+    },
+    {
+      "action": "Italic",
+      "primary": "Ctrl+I",
+      "primaryReached": true,
+      "fallback": null,
+      "fallbackReached": null,
+      "browserActed": false
+    },
+    {
+      "action": "Link",
+      "primary": "Ctrl+K",
+      "primaryReached": true,
+      "fallback": null,
+      "fallbackReached": null,
+      "browserActed": false
+    },
+    {
+      "action": "Font size up",
+      "primary": "Alt+=",
+      "primaryReached": true,
+      "fallback": null,
+      "fallbackReached": null,
+      "browserActed": false
+    },
+    {
+      "action": "Font size down",
+      "primary": "Alt+-",
+      "primaryReached": true,
+      "fallback": null,
+      "fallbackReached": null,
+      "browserActed": false
+    },
+    {
+      "action": "Font size reset",
+      "primary": "Alt+0",
+      "primaryReached": true,
+      "fallback": null,
+      "fallbackReached": null,
+      "browserActed": false
+    },
+    {
+      "action": "Undo",
+      "primary": "Ctrl+Z",
+      "primaryReached": true,
+      "fallback": null,
+      "fallbackReached": null,
+      "browserActed": false
+    },
+    {
+      "action": "Redo",
+      "primary": "Ctrl+Y",
+      "primaryReached": true,
+      "fallback": null,
+      "fallbackReached": null,
+      "browserActed": false
+    },
+    {
+      "action": "Redo (alternative)",
+      "primary": "Ctrl+Shift+Z",
+      "primaryReached": true,
+      "fallback": null,
+      "fallbackReached": null,
+      "browserActed": false
+    },
+    {
+      "action": "Rename in tree",
+      "primary": "F2",
+      "primaryReached": true,
+      "fallback": null,
+      "fallbackReached": null,
+      "browserActed": false
+    },
+    {
+      "action": "Delete in tree",
+      "primary": "Delete",
+      "primaryReached": true,
+      "fallback": null,
+      "fallbackReached": null,
+      "browserActed": false
+    }
+  ]
+}

@@ -628,6 +628,7 @@ Rules:
 - Never use Ctrl+Alt combinations: on Windows they act as AltGr, which Portuguese keyboard layouts need for characters.
 - Match letters on `event.key`, case-insensitively. Match punctuation and digits on `event.code`, so `\`, `=`, `-` and `,` work on Portuguese and US layouts alike.
 - Shortcuts are fixed in version 1. The README lists them.
+- **Spike B result (20 November 2026).** In Brave 157 on Fedora and Brave 158 on Windows, in a tab and in the installed window, every primary and every fallback above reaches the page, and Brave takes no action of its own once the page cancels the key press. Every primary therefore stands as written. The fallbacks are not bound; they stay in the table in case a later Brave keeps a primary. Details in `docs/DECISIONS.md`.
 
 ### 4.13 Other settings
 

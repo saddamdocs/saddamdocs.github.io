@@ -103,7 +103,7 @@ development tools (transitive dependencies of `firebase-tools` and `workbox-buil
 `uuid` and `archiver`). None of that code ships or runs in the browser; revisit when those packages
 update.
 
-### Spike A: release path (in progress)
+### Spike A: release path (Fedora done; Windows pending)
 
 What is built and proven locally:
 
@@ -130,11 +130,16 @@ Done on 19 November 2026:
   URL, passed: checksum OK, a stable build (title "Tamanduá"), no probe chunk.
 - PR #2 (version 0.0.2 only) merged; tag `v0.0.2` → release.
 
-Still to be filled in from Felipe's checks: the next channel live at NEXT_URL; `v0.0.1` and
-`v0.0.2` deployed to STABLE_URL; both apps installed side by side; the update prompt on stable;
-`v0.0.1` put back; the same on Windows.
+Felipe's checks on Fedora, 20 November 2026 (MANUAL_TESTS F-M0-1 to F-M0-11, all ticked): the
+next app opens, installs and reopens offline; the stable workflow pasted into the stable repository
+deployed `v0.0.1`; both apps installed side by side; deploying `v0.0.2` brought the "A new version
+is ready" prompt, and the version changed only after Reload; deploying `v0.0.1` again put it back
+the same way. Afterwards STABLE_URL serves 0.0.1 (commit `ab6b84b`), checked by fetching the page.
 
-### Spike B: shortcuts (Fedora done; Windows pending)
+Still open: the Windows checks W-M0-1 (open and install), W-M0-2 (offline) and W-M0-5 (stable app
+and update on Windows).
+
+### Spike B: shortcuts (done)
 
 The probe page (`NEXT_URL/?probe`, next channel only) lists every row of PLAN 4.12 with its
 fallback, marks each combination whose `keydown` reaches the page, cancels it with
@@ -149,16 +154,24 @@ Ctrl+E cancelled by the page. PLAN 4.12 will be updated from the results.
 
 Results, one JSON file per run in `docs/spike-b/`:
 
-| Run                    | Date        | Brave       | Primaries reached | Fallbacks reached | Brave also acted |
-| ---------------------- | ----------- | ----------- | ----------------- | ----------------- | ---------------- |
-| Fedora, tab            | 20 Nov 2026 | 157 (Linux) | 29 of 29          | 13 of 13          | none             |
-| Fedora, installed app  | 20 Nov 2026 | 157 (Linux) | 29 of 29          | 13 of 13          | none             |
-| Windows, tab           | pending     |             |                   |                   |                  |
-| Windows, installed app | pending     |             |                   |                   |                  |
+| Run                    | Date        | Brave         | Primaries reached | Fallbacks reached | Brave also acted |
+| ---------------------- | ----------- | ------------- | ----------------- | ----------------- | ---------------- |
+| Fedora, tab            | 20 Nov 2026 | 157 (Linux)   | 29 of 29          | 13 of 13          | none             |
+| Fedora, installed app  | 20 Nov 2026 | 157 (Linux)   | 29 of 29          | 13 of 13          | none             |
+| Windows, tab           | 20 Nov 2026 | 158 (Windows) | 29 of 29          | 13 of 13          | none             |
+| Windows, installed app | 20 Nov 2026 | 158 (Windows) | 29 of 29          | 13 of 13          | none             |
 
 On Fedora, in a tab and in the installed window alike, every shortcut of PLAN 4.12 reaches the
 page and the page's `preventDefault` stops Brave's own action (Ctrl+O, Ctrl+S, Ctrl+P, Ctrl+F,
 Ctrl+H, Ctrl+E included). No fallback is needed on Fedora.
+
+Windows gives the same result, in a tab and in the installed window: every primary and every
+fallback reaches the page, and Brave acts on none. (The user agent says "Windows NT 10.0" on
+Windows 10 and 11 alike; Chromium freezes that string.)
+
+**Outcome for PLAN 4.12:** every primary shortcut stands as written, on both systems, in a tab and
+in the installed window. The fallbacks are not needed and are not bound; they stay in the table as
+the documented plan B should a later Brave start keeping a primary. M6 binds the primaries only.
 
 ### Spike C: test tooling on Fedora (done)
 
@@ -170,7 +183,7 @@ Ctrl+H, Ctrl+E included). No fallback is needed on Fedora.
   `~/.cache/firebase`) runs on OpenJDK 25 inside `firebase emulators:exec --project demo-tamandua`,
   with no login. The rules of Appendix B load without error, and 21 rules tests pass.
 
-### Spike D: browser to database (Fedora done; Windows pending)
+### Spike D: browser to database (done)
 
 From a page of the emulator build, under the app's real content security policy plus the emulator
 origin, all of these work against the emulator: `PUT` of an item; a multi-path `PATCH` of an item
@@ -184,4 +197,5 @@ The probe button sends one `GET` for `/tamandua/<32 random characters>/head.json
 Brave on Fedora, against the real locked `NEXT_DB`, Felipe's press of the button gave (20 November
 2026): "PASS: the database answered 401, as expected for a locked database." Brave's Shields (at
 their defaults) and the content security policy let requests to `*.firebasedatabase.app` through;
-no Shields exception is needed. The Windows run (W-M0-4) remains.
+no Shields exception is needed. On Windows (Brave 158) the same press gave PASS twice, in a tab and
+in the installed window.
