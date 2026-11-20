@@ -1,11 +1,12 @@
 /**
- * UI tests of the M0 skeleton against the next build (PLAN 7, M0; PLAN 8, "Interface"):
- * the page, its policy and manifest, the service worker, an offline reload, the channel prefix of
- * the caches, and the shortcut probe of spike B. Tests tagged @brave also run in the installed
- * Brave (`npm run test:brave`).
+ * UI tests of the app shell against the next build (PLAN 7, M0 and M1; PLAN 8, "Interface"):
+ * the first screen, the page's policy and manifest, the service worker, an offline reload, the
+ * channel prefix of the caches, and the shortcut probe of spike B. Tests tagged @brave also run in
+ * the installed Brave (`npm run test:brave`).
  */
 
 import { expect, test, type Page } from '@playwright/test';
+import { newNote, startLocal, treeRow } from '../support/app.ts';
 
 /** Waits until a service worker controls the page, reloading once if needed. */
 async function waitForServiceWorker(page: Page): Promise<void> {
@@ -20,12 +21,13 @@ async function waitForServiceWorker(page: Page): Promise<void> {
     .toBe(true);
 }
 
-test('the skeleton opens with the next channel identity @brave', async ({ page }) => {
+test('a first launch shows the welcome screen with one choice enabled @brave', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveTitle('Tamanduá (next)');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Tamanduá (next)');
-  await expect(page.getByTestId('channel')).toHaveText('next');
-  await expect(page.getByTestId('version')).toHaveText(/^\d+\.\d+\.\d+$/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Tamanduá');
+  await expect(page.getByRole('button', { name: 'Start a new synced vault' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Connect to my vault' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Use only on this device for now' })).toBeEnabled();
   await expect(page.locator('#splash')).toHaveCount(0);
 });
 
@@ -62,14 +64,14 @@ test('the manifest follows PLAN 4.16', async ({ page, request }) => {
   for (const icon of icons) expect((await request.get(icon.src)).ok()).toBe(true);
 });
 
-test('after one visit the app reloads offline @brave', async ({ page, context }) => {
-  await page.goto('/');
+test('after one visit the app and its notes open offline @brave', async ({ page, context }) => {
+  await startLocal(page);
+  await newNote(page, 'Offline note');
   await waitForServiceWorker(page);
   await context.setOffline(true);
   try {
     await page.reload();
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Tamanduá (next)');
-    await expect(page.getByTestId('online')).toContainText('Offline');
+    await expect(treeRow(page, 'Offline note')).toBeVisible();
     // A navigation to another path is served by the app shell too (navigateFallback).
     await page.goto('/?probe');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Shortcut and database probe');
