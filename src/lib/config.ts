@@ -39,3 +39,47 @@ export const SMALL_REQUEST_TIMEOUT_MS = 20_000;
  * (Appendix B), so never lower it.
  */
 export const SYNC_KEY_LENGTH = 32;
+
+/**
+ * Delay before a burst of workspace changes (cursor moves, folder toggles) is written, in ms. The
+ * workspace is a convenience; a longer delay means fewer writes and, after a crash, a cursor
+ * position slightly out of date. Range: 200 ms to 5 s.
+ */
+export const WORKSPACE_SAVE_DELAY_MS = 1000;
+
+/**
+ * Delay before a structural workspace change (a tab opened or closed, a folder expanded) is
+ * written, in ms. Short, because a write started while the page unloads may never commit, and an
+ * open tab should survive an immediate reload (PLAN 4.6). Range: 0 to 200 ms.
+ */
+export const WORKSPACE_PROMPT_SAVE_MS = 50;
+
+/**
+ * Save delay after the last keystroke, in ms (PLAN 4.4: 300 ms). Lower values write more often;
+ * higher values widen the window an abrupt close could lose. Must stay well under 1 s (PLAN R4).
+ */
+export const SAVE_DEBOUNCE_MS = 300;
+
+/**
+ * Longest time an edit may wait during continuous typing, in ms (PLAN 4.4: 2 s after the first
+ * unsaved keystroke).
+ */
+export const SAVE_MAX_DELAY_MS = 2000;
+
+/**
+ * How long the snackbar offers Undo after a deletion or a move, in ms (PLAN 4.3: 5 s).
+ */
+export const UNDO_TIMEOUT_MS = 5000;
+
+/**
+ * How long a page that asked the holder of the one-window lock to step aside waits before taking
+ * the lock anyway, in ms (PLAN 5.10: 2 s). Shorter risks taking over before the other window has
+ * saved; longer makes "Use it here" feel slow.
+ */
+export const LOCK_YIELD_TIMEOUT_MS = 2000;
+
+/**
+ * How often an open app checks for Trash items past their time, in ms (PLAN 6.3: once a day while
+ * the app stays open, besides at start).
+ */
+export const PURGE_INTERVAL_MS = 24 * 60 * 60 * 1000;
