@@ -63,3 +63,40 @@ and neither site on a "clear data on exit" list (PLAN 1.6).
 - [x] **W-M0-5 Stable app and update.** Install STABLE_URL beside the next app. Run "Deploy stable"
       with `v0.0.2`, reopen the stable app, take the update; then deploy `v0.0.1` again and take the
       update back. (Do this after the Fedora checks, or together with F-M0-10 and F-M0-11.)
+
+## M1: vault, tree and plain editor
+
+All at NEXT_URL in Brave, in the installed "Tamanduá (next)" window unless a check says otherwise.
+The next channel has no notes yet, so it opens on the welcome screen.
+
+### Fedora
+
+- [ ] **F-M1-1 Welcome.** The app opens on the welcome screen: icon, "Tamanduá", three buttons, the
+      first two greyed out. Choose "Use only on this device for now". The window shows the sidebar,
+      an empty editor area and the status bar.
+- [ ] **F-M1-2 Build a tree.** With the sidebar buttons and the right-click menu, make folders inside
+      folders (three levels), notes in each, and a note at the root (click the empty space under
+      the tree first). Names with accents (ação, coração) and spaces work. Rename with F2 and with
+      the menu. Try a name with `:` or `?`: the reason shows under the field.
+- [ ] **F-M1-3 Move.** Drag a note onto a folder: it moves, and the snackbar offers Undo. Drag a folder
+      into its own subfolder: refused, with the reason.
+- [ ] **F-M1-4 Trash.** Delete a folder that holds notes (Delete key or menu). It disappears with its
+      contents; Undo brings it back within 5 s. Delete it again, open the Trash (sidebar button):
+      one entry with the date, "Linux · Brave", and the number of items inside. Restore it. Delete
+      it again and use Delete forever: a confirmation appears first.
+- [ ] **F-M1-5 Typing and accents.** Open a note and type a few lines with dead keys: á ã ç ê õ, in a
+      heading (`# Ação`), a list and a quote. Nothing jumps, no character breaks. The status bar
+      shows "Saved" within a second and the word count. Right-click a misspelled word: Brave's own
+      menu offers spelling suggestions.
+- [ ] **F-M1-6 Restart.** Close the installed window right after typing, reopen it: the same note is
+      open with its text, the cursor where it was, and the same folders expanded.
+- [ ] **F-M1-7 One window.** With the app open, open NEXT_URL in a Brave tab: "Tamanduá is open in
+      another window". Press "Use it here": the tab gets the app, the installed window shows the
+      message. Press "Use it here" in the window to take it back.
+- [ ] **F-M1-8 Offline.** Turn the network off, reopen the app: the tree and the notes are all there
+      and editable.
+- [ ] **F-M1-9 Look.** Compare the window with the screenshots in `docs/screenshots/m1/` and with
+      Obsidian's proportions (tree spacing, tab bar, status bar, text column). Approve the welcome
+      screen, the empty shell and the tree, or say what to change (PLAN 7, M1 gate).
+- [ ] **F-M1-10 Sharpness.** At your 150% scaling on the 4K screen, the interface text (Inter) and the
+      note text are sharp, and the window title reads "<note> — Tamanduá (next)".

@@ -200,3 +200,80 @@ Brave on Fedora, against the real locked `NEXT_DB`, Felipe's press of the button
 their defaults) and the content security policy let requests to `*.firebasedatabase.app` through;
 no Shields exception is needed. On Windows (Brave 158) the same press gave PASS twice, in a tab and
 in the installed window.
+
+## M1: vault, tree and plain editor
+
+### Decisions
+
+1. **Names are stored in Unicode NFC.** A name typed with dead keys (decomposed) and the same name
+   typed composed are one name, so "ação" cannot appear twice in a folder.
+2. **Names may not start with a dot.** Import skips every entry whose name starts with a dot
+   (PLAN 4.15), so such a name would export but never import back, breaking R12's round trip.
+3. **Reserved Windows names are checked on the export name**: a note `con` exports as `con.md`,
+   which Windows also refuses, so it is rejected; `COM10` and `console` are allowed.
+4. **Sibling clashes compare export names**, ignoring case: a note `plan` (`plan.md`) and a folder
+   `plan` (`plan/`) may sit side by side.
+5. **Restoring an item whose folder is no longer live** creates a new folder with that folder's name
+   under the root (or "Restored" if the name is unknown) and puts the item in it, as PLAN 4.3 says.
+   Other contents of the old folder stay in the Trash.
+6. **Delete forever, locally:** an item never uploaded (`rev` 0) is removed outright; one that was
+   uploaded keeps a local tombstone (`gone`, still dirty) so the deletion can upload in M3a. Text,
+   file and snapshots go either way.
+7. **A move into a folder that already has an item of that name is refused** with the reason, not
+   renamed. A restore or an Undo that meets a clash renames with ` (2)` instead, because the user
+   did not choose the target.
+8. **Moves can be undone** from the snackbar, like deletions.
+9. **The Trash is a sidebar view** in place of the tree (PLAN 4.9 lists the Trash view under
+   `--sidebar`), opened and closed with the Trash button.
+10. **The vault's name in the sidebar is "Notes"**, as in the layout sketch of PLAN 4.1; the plan
+    gives the vault no other name.
+11. **Buttons of features still to come** (search, calendar, settings) are shown disabled with the
+    milestone in their tooltip, so the sidebar already has its final layout.
+12. **Folder expansion survives the Trash**: a folder deleted and then restored, or undone, comes
+    back expanded if it was. Expanded state is forgotten only when an item is deleted forever.
+13. **The save state machine of PLAN 6.2 is built in M1**, because the plain editor must save. M2
+    adds the failure banner, the persistent-storage request and their tests.
+14. **Workspace saves**: opening or closing a tab or a folder is written after 50 ms; cursor and
+    scroll positions after 1 s, coalesced. Both are written at once when the page is hidden.
+15. **The editor has no focus ring**: CodeMirror shows focus with its cursor, and the ring of
+    PLAN 4.9 drew gold bars beside the text column. Every other focusable element has the ring.
+16. **Fonts in M1: Inter and JetBrains Mono** (Latin and Latin Extended, upright and italic,
+    396 KB in all). The three other note fonts arrive with the font setting in M8.
+17. **Device name**: Brave hides its name from the user agent, so the default name ("Linux ·
+    Brave") uses `navigator.brave.isBrave()`. Playwright's Chromium is named "Linux · Chrome".
+18. **ESLint parses `*.svelte.ts`** (rune modules) with the Svelte parser and the TypeScript parser.
+19. **The 5.10 rule "Clipboard images" is tested in M5**, where pasting images is built. The other
+    rules of 5.10 each have a Playwright test in `tests/ui/hardening.spec.ts`.
+20. **Size to watch:** `@codemirror/lang-markdown` imports `@codemirror/lang-html` at module level,
+    which brings the HTML, CSS and JavaScript grammars into the main bundle (the first-screen
+    JavaScript is 208 KB of the 300 KB budget). Notes never render HTML (PLAN 4.2), so M4, which
+    rebuilds the parser setup for live preview, should build the Markdown language without
+    `lang-html`.
+
+### Copied from Obsidian, not verified against the screenshots
+
+The screenshots in `docs/reference/obsidian/` show the layout, the tree and the tabs. They do not
+show these behaviours, which follow Obsidian as I know it (PLAN 10):
+
+- A new folder is named `Untitled`, then `Untitled 1`, like a new note.
+- Duplicating `plan` makes `plan 1`, beside it, with the text only. Folders are not duplicated.
+- A click on a folder row toggles it; the tree shows chevrons for folders and no icons for notes.
+- Leaving the rename field keeps a valid name and drops an invalid one with a notice. Obsidian
+  focuses a new note's inline title in the editor; Tamanduá has no inline title, so the name is
+  edited in the tree.
+- Closing the active tab activates its right neighbour, else its left.
+
+### Dependencies added in M1
+
+| Package                                     | Version                        | Licence    | Purpose                                      |
+| ------------------------------------------- | ------------------------------ | ---------- | -------------------------------------------- |
+| idb                                         | 8.0.4                          | ISC        | Typed promise wrapper for IndexedDB (PLAN 3) |
+| @codemirror/state, view, commands, language | 6.7.6, 6.43.15, 6.11.1, 6.13.1 | MIT        | The editor (PLAN 3)                          |
+| @codemirror/lang-markdown                   | 6.5.2                          | MIT        | Markdown language support                    |
+| @lezer/markdown                             | 1.8.1                          | MIT        | The parser and its GFM extensions            |
+| @lezer/highlight                            | 1.2.5                          | MIT        | Highlight tags for the source-mode colours   |
+| @fontsource-variable/inter                  | 5.3.0                          | OFL-1.1    | Interface font and default note font         |
+| @fontsource-variable/jetbrains-mono         | 5.3.0                          | OFL-1.1    | Code font                                    |
+| fake-indexeddb (dev)                        | 6.2.8                          | Apache-2.0 | IndexedDB in Vitest                          |
+
+`npm audit --omit=dev` still reports 0 vulnerabilities.
