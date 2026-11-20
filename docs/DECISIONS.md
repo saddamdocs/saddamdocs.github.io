@@ -134,7 +134,7 @@ Still to be filled in from Felipe's checks: the next channel live at NEXT_URL; `
 `v0.0.2` deployed to STABLE_URL; both apps installed side by side; the update prompt on stable;
 `v0.0.1` put back; the same on Windows.
 
-### Spike B: shortcuts (Fedora tab done; installed window and Windows pending)
+### Spike B: shortcuts (Fedora done; Windows pending)
 
 The probe page (`NEXT_URL/?probe`, next channel only) lists every row of PLAN 4.12 with its
 fallback, marks each combination whose `keydown` reaches the page, cancels it with
@@ -152,13 +152,13 @@ Results, one JSON file per run in `docs/spike-b/`:
 | Run                    | Date        | Brave       | Primaries reached | Fallbacks reached | Brave also acted |
 | ---------------------- | ----------- | ----------- | ----------------- | ----------------- | ---------------- |
 | Fedora, tab            | 20 Nov 2026 | 157 (Linux) | 29 of 29          | 13 of 13          | none             |
-| Fedora, installed app  | pending     |             |                   |                   |                  |
+| Fedora, installed app  | 20 Nov 2026 | 157 (Linux) | 29 of 29          | 13 of 13          | none             |
 | Windows, tab           | pending     |             |                   |                   |                  |
 | Windows, installed app | pending     |             |                   |                   |                  |
 
-In a Fedora tab, every shortcut of PLAN 4.12 reaches the page and the page's `preventDefault`
-stops Brave's own action (Ctrl+O, Ctrl+S, Ctrl+P, Ctrl+F, Ctrl+H, Ctrl+E included). No fallback is
-needed there.
+On Fedora, in a tab and in the installed window alike, every shortcut of PLAN 4.12 reaches the
+page and the page's `preventDefault` stops Brave's own action (Ctrl+O, Ctrl+S, Ctrl+P, Ctrl+F,
+Ctrl+H, Ctrl+E included). No fallback is needed on Fedora.
 
 ### Spike C: test tooling on Fedora (done)
 
@@ -170,7 +170,7 @@ needed there.
   `~/.cache/firebase`) runs on OpenJDK 25 inside `firebase emulators:exec --project demo-tamandua`,
   with no login. The rules of Appendix B load without error, and 21 rules tests pass.
 
-### Spike D: browser to database (emulator part done; NEXT_DB probe pending)
+### Spike D: browser to database (Fedora done; Windows pending)
 
 From a page of the emulator build, under the app's real content security policy plus the emulator
 origin, all of these work against the emulator: `PUT` of an item; a multi-path `PATCH` of an item
@@ -180,5 +180,8 @@ the initial `put` and later `put` events for the page's own writes and for anoth
 violation is reported. The emulator answers cross-origin requests (CORS) from the preview server.
 
 The probe button sends one `GET` for `/tamandua/<32 random characters>/head.json` through
-`sync/rest.ts`. Against an emulator namespace in locked mode it reports PASS (401). Felipe's press of
-the button at NEXT_URL, against the real locked `NEXT_DB`, is the remaining check.
+`sync/rest.ts`. Against an emulator namespace in locked mode it reports PASS (401). At NEXT_URL in
+Brave on Fedora, against the real locked `NEXT_DB`, Felipe's press of the button gave (20 November
+2026): "PASS: the database answered 401, as expected for a locked database." Brave's Shields (at
+their defaults) and the content security policy let requests to `*.firebasedatabase.app` through;
+no Shields exception is needed. The Windows run (W-M0-4) remains.
