@@ -103,7 +103,7 @@ development tools (transitive dependencies of `firebase-tools` and `workbox-buil
 `uuid` and `archiver`). None of that code ships or runs in the browser; revisit when those packages
 update.
 
-### Spike A: release path (Fedora done; Windows pending)
+### Spike A: release path (done)
 
 What is built and proven locally:
 
@@ -136,8 +136,9 @@ deployed `v0.0.1`; both apps installed side by side; deploying `v0.0.2` brought 
 is ready" prompt, and the version changed only after Reload; deploying `v0.0.1` again put it back
 the same way. Afterwards STABLE_URL serves 0.0.1 (commit `ab6b84b`), checked by fetching the page.
 
-Still open: the Windows checks W-M0-1 (open and install), W-M0-2 (offline) and W-M0-5 (stable app
-and update on Windows).
+On Windows (Brave 158), reported by Felipe on 20 November 2026: the next app opens, installs with a
+Start menu entry and reopens offline; the stable app installs beside it; deploying `v0.0.2` brought
+the update prompt and deploying `v0.0.1` put it back. Spike A is complete on both systems.
 
 ### Spike B: shortcuts (done)
 

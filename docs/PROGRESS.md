@@ -4,10 +4,10 @@ Updated at the end of every session (PLAN 10, "Process").
 
 ## Status
 
-| Milestone | State                                                             |
-| --------- | ----------------------------------------------------------------- |
-| M0        | Built; waiting for Felipe's checks (spike A deploys, spikes B, D) |
-| M1 to M11 | Not started                                                       |
+| Milestone | State                                               |
+| --------- | --------------------------------------------------- |
+| M0        | Accepted by Felipe on 20 November 2026; tagged `m0` |
+| M1 to M11 | Not started                                         |
 
 ## M0: environment, skeleton and deploy
 
@@ -26,14 +26,12 @@ Branch `m0-skeleton`.
 | 9   | Spike C: Playwright Chromium, Brave, emulator                                | done                                                |
 | 10  | Spike D: browser to emulator; probe button for NEXT_DB                       | done (emulator; NEXT_DB PASS on Fedora and Windows) |
 | 11  | Merge to `main`, next channel live, tag `v0.0.1` and `v0.0.2`                | done (PR #1, #2; releases v0.0.1, v0.0.2)           |
-| 12  | Spike A: Felipe deploys `v0.0.1`, `v0.0.2`, puts `v0.0.1` back               | Fedora done; Windows W-M0-1, 2, 5 pending           |
-| 13  | Update PLAN 4.12 from spike B; write spike A up                              | 4.12 done; spike A write-up done for Fedora         |
+| 12  | Spike A: Felipe deploys `v0.0.1`, `v0.0.2`, puts `v0.0.1` back               | done (Fedora and Windows)                           |
+| 13  | Update PLAN 4.12 from spike B; write spike A up                              | done                                                |
 
 ## Next
 
-- Felipe's M0 checks (`docs/MANUAL_TESTS.md`, M0), then fill in spikes A, B and D in `DECISIONS.md`
-  and update PLAN 4.12 from the probe's results.
-- After Felipe accepts M0: tag `m0`, then start M1.
+- M1: vault, tree and plain editor (on this device only).
 
 ## Blockers
 
