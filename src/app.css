@@ -1,7 +1,7 @@
 /*
  * Global styles of the page: the base element styles, buttons and the focus ring of PLAN 4.9.
  * Colours come only from the theme variables that `settings/themes.ts` sets on the root.
- * M1 adds the fonts (`--font-ui`, `--font-text`, `--font-mono`) and the shell's layout.
+ * Fonts come from `--font-ui`, `--font-text` and `--font-mono`, set by `settings/apply.ts`.
  */
 
 :root {
@@ -15,9 +15,9 @@ body {
   min-height: 100%;
   background: var(--paper);
   color: var(--text);
-  font-family: system-ui, sans-serif;
-  font-size: 16px;
-  line-height: 1.6;
+  font-family: var(--font-ui, system-ui, sans-serif);
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 ::selection {
@@ -62,4 +62,16 @@ input[type='checkbox'] {
   outline: 2px solid var(--dark);
   outline-offset: 0;
   box-shadow: 0 0 0 4px var(--accent);
+}
+
+/* The editor shows focus with its cursor; the ring would draw gold bars beside the text column. */
+.cm-content:focus-visible,
+.cm-editor:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }

@@ -2,35 +2,74 @@
 
 A map of the modules and short guides for later changes (PLAN 10, "Comments and maintainability").
 Keep it in step with the code: a stale entry is a defect. PLAN 5 describes the target design; this
-file describes what exists now.
+file describes what exists now (M1).
 
-## Module map (M0)
+## How the pieces fit
 
-| Path                         | Job                                                                     |
-| ---------------------------- | ----------------------------------------------------------------------- |
-| `index.html`                 | The page; CSP, title and splash colours filled in at build time         |
-| `vite.config.ts`             | Modes (channels), defines, HTML placeholders, PWA plugin, probe stub    |
-| `src/main.ts`                | Applies the theme, mounts `App.svelte`, removes the splash              |
-| `src/App.svelte`             | M0 skeleton screen, update snackbar, entry to the probe                 |
-| `src/app.css`                | Global element styles, buttons, the focus ring of PLAN 4.9              |
-| `src/lib/channel.ts`         | Channel table and the running `channel`; the only home of database URLs |
-| `src/lib/config.ts`          | Every tunable value, with unit and range                                |
-| `src/lib/build.ts`           | Version, commit and build date injected by Vite                         |
-| `src/lib/csp.ts`             | The content security policy text (PLAN 5.9)                             |
-| `src/lib/strings.ts`         | Every text shown to the user                                            |
-| `src/lib/updates.ts`         | Service worker registration, hourly update check, reload on request     |
-| `src/lib/settings/themes.ts` | Theme variables and their values (Tamanduá Light)                       |
-| `src/lib/sync/rest.ts`       | All database requests; M0 has only the spike D probe                    |
-| `src/lib/probe/`             | Spike B and D probe page (next channel only)                            |
-| `scripts/icons.ts`           | Renders `public/icons/*.png` from the SVGs with Playwright              |
-| `scripts/check-origins.ts`   | PLAN 5.9 rule 4 on a build                                              |
-| `scripts/check-size.ts`      | PLAN 8 size budgets on a build                                          |
-| `scripts/release-notes.ts`   | Release body with the schema version                                    |
-| `database.rules.json`        | Appendix B, byte for byte                                               |
-| `tests/unit/`                | Vitest, pure logic                                                      |
-| `tests/rules/`               | Vitest against the emulator                                             |
-| `tests/ui/`                  | Playwright against `vite preview` of the next and emulator builds       |
-| `tests/support/emulator.ts`  | Emulator helpers: namespaces, rules loading, REST, test keys            |
+```text
+main.ts ─ applies the default appearance, mounts App.svelte
+App.svelte ─ one-window lock → boot() → Welcome | Shell | lock / newer-data / storage screens
+  app/boot.ts ─ opens IndexedDB, loads Vault + SettingsStore + workspace → Session
+  app/session.svelte.ts ─ the running state ($state) and every user action
+    vault/operations.ts (Vault) ─ the only writer of items, texts, files, snapshots
+    settings/store.ts ─ the settings item, through the Vault
+    workspace/ ─ panes and tabs of this device, saved on their own
+    autosave/ ─ one NoteSaver per open note (the 6.2 state machine)
+  ui/ ─ components read Session fields and call Session methods; nothing else writes
+```
+
+A user action goes: component → `Session` method → `Vault` operation (one strict IndexedDB
+transaction) → the vault's listeners → `Session.index` replaced → components update. Typing goes:
+CodeMirror → `NoteSaver.edit()` → timer → `Vault.saveText()`.
+
+## Module map
+
+| Path                             | Job                                                                                                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.html`                     | The page; CSP, title and splash colours filled in at build time                                                                             |
+| `vite.config.ts`                 | Modes (channels), defines, HTML placeholders, PWA plugin, probe stub                                                                        |
+| `src/main.ts`                    | Default appearance, mounts `App.svelte`, removes the splash                                                                                 |
+| `src/App.svelte`                 | Lock, start-up phases, update prompt, probe entry                                                                                           |
+| `src/app.css`                    | Global element styles, buttons, the focus ring of PLAN 4.9                                                                                  |
+| `src/lib/channel.ts`             | Channel table and the running `channel`; the only home of database URLs                                                                     |
+| `src/lib/config.ts`              | Every tunable value, with unit and range                                                                                                    |
+| `src/lib/build.ts`               | Version, commit and build date injected by Vite                                                                                             |
+| `src/lib/csp.ts`                 | The content security policy text (PLAN 5.9)                                                                                                 |
+| `src/lib/strings.ts`             | Every text shown to the user                                                                                                                |
+| `src/lib/device.ts`              | Default device name ("Linux · Brave")                                                                                                       |
+| `src/lib/updates.ts`             | Service worker registration, hourly update check, reload on request                                                                         |
+| `src/lib/app/boot.ts`            | Start-up order; "Use only on this device for now"                                                                                           |
+| `src/lib/app/session.svelte.ts`  | Running state and actions; reports refusals and failures                                                                                    |
+| `src/lib/app/notices.svelte.ts`  | The snackbar's state                                                                                                                        |
+| `src/lib/store/schema.ts`        | Record types of every IndexedDB store (PLAN 5.3)                                                                                            |
+| `src/lib/store/db.ts`            | Opening, migrations, newer-data guard, `writeTx` with strict durability                                                                     |
+| `src/lib/store/log.ts`           | Diagnostic log, 500 entries, no note text                                                                                                   |
+| `src/lib/vault/ids.ts`           | Item ids (PLAN 5.5)                                                                                                                         |
+| `src/lib/vault/names.ts`         | Name rules, clashes, free names (PLAN 4.3)                                                                                                  |
+| `src/lib/vault/records.ts`       | New records and `changed()`: the sync bookkeeping of every local change                                                                     |
+| `src/lib/vault/tree.ts`          | `VaultIndex`: parents, paths, Trash, tree rows, Trash entries                                                                               |
+| `src/lib/vault/operations.ts`    | `Vault`: every operation on items and texts                                                                                                 |
+| `src/lib/settings/schema.ts`     | Settings, defaults, ranges, safe parsing                                                                                                    |
+| `src/lib/settings/store.ts`      | Settings item load and save                                                                                                                 |
+| `src/lib/settings/themes.ts`     | Theme variables (Tamanduá Light)                                                                                                            |
+| `src/lib/settings/fonts.ts`      | Font registry; the only file with font names                                                                                                |
+| `src/lib/settings/apply.ts`      | Writes theme, fonts and sizes as CSS variables                                                                                              |
+| `src/lib/workspace/model.ts`     | Panes, tabs, expanded folders; pure functions                                                                                               |
+| `src/lib/workspace/store.ts`     | Workspace load and coalesced save                                                                                                           |
+| `src/lib/autosave/machine.ts`    | The save state machine of PLAN 6.2 (pure)                                                                                                   |
+| `src/lib/autosave/controller.ts` | Runs it: timers, writes, retries; page hide and close                                                                                       |
+| `src/lib/editor/setup.ts`        | CodeMirror source mode                                                                                                                      |
+| `src/lib/editor/words.ts`        | Word count                                                                                                                                  |
+| `src/lib/instance/lock.ts`       | One window at a time (PLAN 5.10)                                                                                                            |
+| `src/lib/sync/rest.ts`           | All database requests; M0 has only the spike D probe                                                                                        |
+| `src/lib/probe/`                 | Spike B and D probe page (next channel only)                                                                                                |
+| `src/lib/ui/`                    | Components: Shell, Sidebar, FileTree, TrashView, TabBar, NoteEditor, StatusBar, Welcome, Screen, Snackbar, ConfirmDialog, ContextMenu, Icon |
+| `scripts/`                       | Icons, origin and size checks, release notes, screenshots                                                                                   |
+| `database.rules.json`            | Appendix B, byte for byte                                                                                                                   |
+| `tests/unit/`                    | Vitest, pure logic and the vault on fake-indexeddb                                                                                          |
+| `tests/rules/`                   | Vitest against the emulator                                                                                                                 |
+| `tests/ui/`                      | Playwright against `vite preview` of the next and emulator builds                                                                           |
+| `tests/support/`                 | Emulator helpers and UI helpers                                                                                                             |
 
 ## How builds differ by channel
 
@@ -40,6 +79,31 @@ the next channel at `http://127.0.0.1:9000` and add it to the CSP. `vite.config.
 `build.ts` read them. Anything that differs between channels must come from `channel`.
 
 ## How to…
+
+### …add a font for notes (PLAN 4.9)
+
+1. `npm install --save-exact @fontsource-variable/<name>@<version>`; check its licence is OFL.
+2. In `src/lib/settings/fonts.ts`, import its four Latin files (`latin` and `latin-ext`, `normal`
+   and `italic`, `wght`) with `?url`, as Inter's are.
+3. Add its id to `FontId`, an entry to `FONTS` (label, family name, stack with fallbacks, weight
+   range, files, source, licence, one-line note), and its id to `NOTE_FONT_IDS` in display order.
+4. Add it to `THIRD_PARTY_LICENSES.md`.
+5. `npm run build:next && npm run check:size`, and state the fonts' new total in the change (budget
+   3 MB). The unit test of the font fallback needs no change.
+
+### …add a setting
+
+1. Add the field with a comment to `Settings` in `src/lib/settings/schema.ts`, its default to
+   `DEFAULT_SETTINGS`, a range to `RANGES` if numeric, and a line to `parseSettings`.
+2. Read it as `session.settings.<name>`; components update by themselves.
+3. Add a case to `tests/unit/settings-workspace.test.ts` for an invalid stored value.
+
+### …add a field to the item metadata
+
+Add it to `ItemMeta` in `src/lib/store/schema.ts`, set it in `vault/records.ts` (`newRecord`,
+`metaOf`) and, if a local change may set it, in `ItemPatch`. If existing records need a value, add a
+migration to `store/db.ts` that fills it in without deleting anything, with a test on a fixture of
+the previous version. M3a adds the step that seals it into `meta`.
 
 ### …add a database rule
 
@@ -62,6 +126,11 @@ Add it to the right group in `src/lib/strings.ts` and import it.
 Add the name to `ThemeVariable` in `src/lib/settings/themes.ts`, a value with a comment in every
 theme, and, if it is a text colour, add it to the pairs of `tests/unit/themes.test.ts` (PLAN 4.9).
 
+### …add a user action
+
+Add a method to `Session` that calls the `Vault` (or the workspace functions) and reports a refusal
+or failure through `notify`. Components call the method; they never write to the vault themselves.
+
 ### …add a remote origin the app may use
 
 Do not, without asking: PLAN 5.9 allows only the app's own origin and its channel's database. The
@@ -69,12 +138,12 @@ CSP lives in `src/lib/csp.ts`; `scripts/check-origins.ts` fails the build on any
 
 ### …add a UI test
 
-Put it in `tests/ui/`. It runs against `vite preview` of the next build (port 4173) or of the
-emulator build (port 4174, see `playwright.config.ts`). Tag it `@brave` in its title if the Brave
-smoke run should include it.
+Put it in `tests/ui/`, using the helpers in `tests/support/app.ts`. It runs against `vite preview`
+of the next build (port 4173) or of the emulator build (port 4174). Tag it `@brave` in its title if
+the Brave smoke run should include it. Assert on the tree with `expect.poll(() => treeText(page))`,
+because actions are asynchronous.
 
 ### Guides still to write
 
-Written when their modules land: a Markdown element in live preview (M4), a setting (M8), a theme
-(M8), a font (M8, PLAN 4.9 asks for a step-by-step guide), a shortcut (M6), a field of the item
-metadata (M3a), a new encryption format (M3a).
+Written when their modules land: a Markdown element in live preview (M4), a theme (M8), a shortcut
+(M6), a new encryption format (M3a).

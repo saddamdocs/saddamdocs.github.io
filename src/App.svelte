@@ -1,159 +1,148 @@
 <!--
   @component
-  The M0 skeleton: one screen that shows the app's name, channel, version and connection state,
-  the update prompt of PLAN 4.16, and, on the next channel only, a link to the spike B and D probe.
-  M1 replaces this screen with the real shell (sidebar, panes, status bar).
+  The root of the app: takes the one-window lock (PLAN 5.10), starts up (PLAN 4.1, 4.16), and shows
+  the screen that fits: the welcome screen, the shell, "open in another window", "saved by a newer
+  version", or a storage error. Also owns the update prompt (PLAN 4.16) and, on the next channel
+  only, the spike B and D probe at `?probe`.
 
-  Talks to: `channel.ts` and `build.ts` for what it shows, `updates.ts` for the service worker,
-  `strings.ts` for its texts, and `probe/Probe.svelte`, loaded on demand.
+  Talks to: `instance/lock.ts`, `app/boot.ts`, `app/notices.svelte.ts`, `updates.ts`,
+  `channel.ts`, `strings.ts`, and the screens in `lib/ui/`.
 -->
 <script lang="ts">
-  import { channel, IS_NEXT_BUILD } from './lib/channel.ts';
-  import { build } from './lib/build.ts';
+  import { onMount } from 'svelte';
+  import { boot, startLocalVault } from './lib/app/boot.ts';
+  import { Notices } from './lib/app/notices.svelte.ts';
+  import type { Session } from './lib/app/session.svelte.ts';
+  import { IS_NEXT_BUILD } from './lib/channel.ts';
+  import { InstanceLock } from './lib/instance/lock.ts';
+  import type { VaultDb } from './lib/store/db.ts';
+  import { logEvent } from './lib/store/log.ts';
+  import { screens as t, updates as u } from './lib/strings.ts';
   import { startUpdates } from './lib/updates.ts';
-  import { skeleton as t, updates as u } from './lib/strings.ts';
-  import { SNACKBAR_TIMEOUT_MS } from './lib/config.ts';
+  import Screen from './lib/ui/Screen.svelte';
+  import Shell from './lib/ui/Shell.svelte';
+  import Snackbar from './lib/ui/Snackbar.svelte';
+  import Welcome from './lib/ui/Welcome.svelte';
 
-  /** A short notice at the bottom of the window, with an optional action (PLAN 4.1). */
-  interface Snack {
-    text: string;
-    action?: { label: string; run: () => void };
-  }
+  type Phase =
+    | { kind: 'loading' }
+    | { kind: 'elsewhere'; heldBefore: boolean }
+    | { kind: 'welcome'; db: VaultDb }
+    | { kind: 'ready'; session: Session }
+    | { kind: 'newer' }
+    | { kind: 'unavailable'; error: string };
 
-  let online = $state(navigator.onLine);
-  let snack = $state<Snack | null>(null);
-  // The probe exists only on the next channel. On stable this folds to `false` at build time, and
-  // the probe's chunk is left out of the stable build.
+  const notices = new Notices();
+  const lock = new InstanceLock();
+  let phase: Phase = $state({ kind: 'loading' });
+  // The probe exists only on the next channel; on stable this folds to false at build time.
   let showProbe = $state(IS_NEXT_BUILD && new URLSearchParams(location.search).has('probe'));
 
-  let snackTimer: ReturnType<typeof setTimeout> | undefined;
-  function notify(next: Snack): void {
-    clearTimeout(snackTimer);
-    snack = next;
-    if (next.action === undefined) {
-      snackTimer = setTimeout(() => (snack = null), SNACKBAR_TIMEOUT_MS);
+  const handlers = {
+    onYield: async (): Promise<void> => {
+      // PLAN 5.10: save everything before stepping aside.
+      if (phase.kind === 'ready') await phase.session.saves.flushAll();
+    },
+    onLost: (): void => {
+      phase = { kind: 'elsewhere', heldBefore: true };
+    },
+  };
+
+  async function start(): Promise<void> {
+    const result = await boot(notices);
+    phase = result;
+  }
+
+  async function useHere(): Promise<void> {
+    const heldBefore = phase.kind === 'elsewhere' && phase.heldBefore;
+    await lock.takeOver(handlers);
+    // A page that held the lock before has stale state in memory: start afresh from storage.
+    if (heldBefore) location.reload();
+    else await start();
+  }
+
+  async function chooseLocal(db: VaultDb): Promise<void> {
+    try {
+      phase = { kind: 'ready', session: await startLocalVault(db, notices) };
+    } catch (error) {
+      await logEvent(db, 'error', 'vault-create-failed', error instanceof Error ? error.name : '');
+      phase = {
+        kind: 'unavailable',
+        error: error instanceof Error ? error.message : String(error),
+      };
     }
   }
 
   const reloadToUpdate = startUpdates({
     onNeedRefresh: () =>
-      notify({
-        text: u.ready,
-        action: {
+      notices.notify(
+        u.ready,
+        {
           label: u.reload,
           run: () => {
-            snack = null;
-            reloadToUpdate().catch((error: unknown) => console.error(error));
+            notices.dismiss();
+            // PLAN 4.16: Reload saves everything first.
+            const save =
+              phase.kind === 'ready' ? phase.session.saves.flushAll() : Promise.resolve();
+            void save.then(() => reloadToUpdate()).catch((error: unknown) => console.error(error));
           },
         },
-      }),
-    onOfflineReady: () => notify({ text: u.offlineReady }),
-    onError: (error) => notify({ text: u.registerFailed + String(error) }),
+        'sticky',
+      ),
+    onOfflineReady: () => notices.notify(u.offlineReady),
+    onError: (error) => notices.notify(u.registerFailed + String(error)),
   });
 
-  function openProbe(event: MouseEvent): void {
-    event.preventDefault();
-    history.pushState(null, '', '?probe');
-    showProbe = true;
-  }
-  function closeProbe(): void {
-    history.pushState(null, '', location.pathname);
-    showProbe = false;
-  }
+  onMount(() => {
+    if (showProbe) return;
+    void lock.acquire(handlers).then(async (held) => {
+      if (held) await start();
+      else phase = { kind: 'elsewhere', heldBefore: false };
+    });
+  });
 </script>
-
-<svelte:window ononline={() => (online = true)} onoffline={() => (online = false)} />
 
 {#if IS_NEXT_BUILD && showProbe}
   {#await import('./lib/probe/Probe.svelte') then probe}
-    <probe.default onBack={closeProbe} />
+    <probe.default
+      onBack={() => {
+        history.pushState(null, '', location.pathname);
+        showProbe = false;
+        location.reload();
+      }}
+    />
   {/await}
+{:else if phase.kind === 'loading'}
+  <Screen title={t.loading} />
+{:else if phase.kind === 'elsewhere'}
+  <Screen
+    title={t.elsewhereTitle}
+    body={t.elsewhereBody}
+    action={{ label: t.useHere, run: () => void useHere(), testid: 'use-here' }}
+  />
+{:else if phase.kind === 'welcome'}
+  {@const db = phase.db}
+  <Welcome onLocal={() => void chooseLocal(db)} />
+{:else if phase.kind === 'ready'}
+  <Shell session={phase.session} />
+{:else if phase.kind === 'newer'}
+  <Screen
+    title={t.newerTitle}
+    body={t.newerBody}
+    action={{ label: t.reload, run: () => location.reload() }}
+  />
 {:else}
-  <main class="skeleton">
-    <img src="/icons/favicon.svg" width="96" height="96" alt="" />
-    <h1>{channel.appName}</h1>
-    <p>{t.tagline}</p>
-    <dl>
-      <dt>{t.version}</dt>
-      <dd data-testid="version">{build.version}</dd>
-      <dt>{t.channel}</dt>
-      <dd data-testid="channel">{channel.name}</dd>
-      <dt>{t.commit}</dt>
-      <dd>{build.commit}</dd>
-      <dt>{t.built}</dt>
-      <dd>{build.date}</dd>
-    </dl>
-    <p class="status" class:offline={!online} data-testid="online">
-      {online ? t.online : t.offline}
-    </p>
-    {#if IS_NEXT_BUILD}
-      <p><a href="?probe" onclick={openProbe}>{t.probeLink}</a></p>
-    {/if}
-  </main>
+  <Screen title={t.unavailableTitle} body={t.unavailableBody}>
+    <p class="detail">{phase.error}</p>
+  </Screen>
 {/if}
 
-{#if snack}
-  <div class="snackbar" role="status">
-    <span>{snack.text}</span>
-    {#if snack.action}
-      <button type="button" onclick={snack.action.run}>{snack.action.label}</button>
-    {/if}
-  </div>
-{/if}
+<Snackbar {notices} />
 
 <style>
-  .skeleton {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 64px 24px;
-    text-align: center;
-  }
-  h1 {
-    color: var(--heading);
-    margin: 16px 0 8px;
-  }
-  dl {
-    display: grid;
-    grid-template-columns: auto auto;
-    gap: 4px 16px;
-    margin: 24px 0;
-    text-align: left;
-  }
-  dt {
+  .detail {
     color: var(--text-muted);
-  }
-  dd {
-    margin: 0;
-    font-family: ui-monospace, monospace;
-  }
-  .status {
-    padding: 4px 12px;
-    border-radius: 4px;
-    background: var(--panel);
-  }
-  .status.offline {
-    border-left: 4px solid var(--accent);
-  }
-  .snackbar {
-    position: fixed;
-    left: 50%;
-    bottom: 24px;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 16px;
-    align-items: center;
-    padding: 10px 16px;
-    border-radius: 6px;
-    background: var(--dark);
-    color: var(--on-dark);
-  }
-  .snackbar button {
-    background: none;
-    border: none;
-    color: var(--accent);
-    font: inherit;
-    font-weight: 600;
-    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 12px;
   }
 </style>

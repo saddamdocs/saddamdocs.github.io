@@ -101,7 +101,9 @@ export default ts.config(
     },
   },
   {
-    files: ['**/*.svelte'],
+    // Components and rune modules (`*.svelte.ts`) go through the Svelte parser, which hands the
+    // script to the TypeScript parser.
+    files: ['**/*.svelte', '**/*.svelte.ts'],
     languageOptions: {
       parserOptions: {
         parser: ts.parser,

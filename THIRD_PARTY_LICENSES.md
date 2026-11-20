@@ -9,4 +9,13 @@ from the production dependencies and the bundled fonts (PLAN 9); until then it i
 | workbox-window                             | 7.4.1   | MIT     | https://github.com/GoogleChrome/workbox |
 | Workbox (generated service worker runtime) | 7.4     | MIT     | https://github.com/GoogleChrome/workbox |
 
-Fonts (PLAN 4.9) arrive in M1 and will be listed here with their SIL Open Font License notices.
+| idb | 8.0.4 | ISC | https://github.com/jakearchibald/idb |
+| CodeMirror (state, view, commands, language, lang-markdown, lang-html and its grammars) | 6.x | MIT | https://github.com/codemirror |
+| Lezer (markdown, highlight, common, lr, html, css, javascript) | 1.x | MIT | https://github.com/lezer-parser |
+
+## Fonts
+
+| Font                      | Version | Licence                   | Source                                                                             |
+| ------------------------- | ------- | ------------------------- | ---------------------------------------------------------------------------------- |
+| Inter (variable)          | 5.3.0   | SIL Open Font License 1.1 | https://github.com/rsms/inter via @fontsource-variable/inter                       |
+| JetBrains Mono (variable) | 5.3.0   | SIL Open Font License 1.1 | https://github.com/JetBrains/JetBrainsMono via @fontsource-variable/jetbrains-mono |

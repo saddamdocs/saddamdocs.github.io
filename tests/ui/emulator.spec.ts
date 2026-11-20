@@ -46,7 +46,7 @@ test.describe('spike D: browser to emulator', () => {
       if (msg.text().includes('Content Security Policy')) violations.push(msg.text());
     });
     await page.goto(APP);
-    await expect(page.getByTestId('channel')).toHaveText('next');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Tamanduá');
 
     const base = `${EMULATOR_URL}/tamandua/${key}`;
     const id = randomId();
