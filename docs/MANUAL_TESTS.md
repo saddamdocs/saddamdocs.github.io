@@ -34,7 +34,7 @@ and neither site on a "clear data on exit" list (PLAN 1.6).
 - [x] **F-M0-5 Shortcut probe, installed window.** In the installed "Tamanduá (next)" window, click
       "Open the shortcut and database probe" and repeat F-M0-4. "Display mode" must say
       "standalone (installed app)". Copy and paste the results.
-- [ ] **F-M0-6 Database probe (spike D).** On the probe page, press "Send the probe request".
+- [x] **F-M0-6 Database probe (spike D).** On the probe page, press "Send the probe request".
       Expected: "PASS: the database answered 401…". Paste the line into the chat whatever it says.
       If it fails, try once more with Shields down for the site and say which result you got.
 - [ ] **F-M0-7 Paste the stable workflow.** In the stable repository
