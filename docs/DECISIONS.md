@@ -286,3 +286,66 @@ M1 accepted with these changes.
 | fake-indexeddb (dev)                        | 6.2.8                          | Apache-2.0 | IndexedDB in Vitest                          |
 
 `npm audit --omit=dev` still reports 0 vulnerabilities.
+
+## M2: saving, history, and plain Markdown in and out
+
+### Decisions
+
+1. **Image links on a move (PLAN 4.3).** A link is rewritten when its path names a file from the
+   note's old folder and would not name the same file from the new one. Links that only worked
+   through the same-name fallback keep working the same way and are left as written; links to
+   missing images stay as written. Undo rewrites the links back from where the note is then, to
+   their shortest path, so edits made after the move are kept and a move plus its Undo gives back
+   the original text. Links inside code spans and fenced blocks are not links.
+2. **Link paths are written with `%20`, `%28`, `%29` and `%25`** for spaces, parentheses and percent
+   signs, so a rewritten link is always valid Markdown; reading decodes them.
+3. **An open note whose links a move rewrote reloads in its editor**, which loses that tab's undo
+   history in this one case. M3b builds the in-place apply of remote changes (PLAN 6.3) and can take
+   this over.
+4. **Snapshots keep the current text**, taken after 5 minutes idle and when a tab closes, only if
+   the note was edited in that tab, subject to the 10-minute rule in the vault. Restore first keeps a
+   forced snapshot of the current text (reason "before a restore"), then replaces the text through
+   the editor as one transaction, so Ctrl+Z undoes it and autosave stores it.
+5. **Export layout.** Every folder gets a folder entry, empty or not. Names that clash ignoring case
+   get ` (2)` in creation order, before a file's extension (`map (2).png`). Images are stored without
+   recompression. fflate sets the ZIP UTF-8 flag on non-ASCII names (checked byte by byte and with
+   Python's `zipfile`), so accented names unpack correctly on Windows.
+6. **The Trash in an export** is offered for the whole vault only; inside `.trash/`, a deleted
+   folder keeps everything it held.
+7. **Import, the ` (2)` rule for folders:** a folder whose path already exists in the target is
+   imported as `name (2)` with its contents inside, as PLAN 4.15 says ("the imported one gets (2) and
+   nothing existing is changed"). Items of the same import that clash ignoring case also get ` (2)`,
+   in source order.
+8. **Import, hidden entries:** the folders above a hidden entry are created (a folder holding only
+   `.gitkeep` or `.DS_Store` arrives empty); each hidden folder is listed once in the summary.
+9. **Import, name fixes:** `_` for each forbidden or control character and for each trailing dot or
+   space; `_` after a reserved Windows name (`CON_`, `aux_.png`); 200 characters at most. Links in the
+   same import follow a renamed image, also when its old name contained `:`.
+10. **Import sources:** one picker takes `.md`, `.markdown`, images and `.zip` files together (loose
+    files land in the target, a zip's top level too); a second picker takes a folder, whose own name
+    is dropped from the paths.
+11. **fflate runs in a worker of our own** (`transfer/zip.worker.ts`), with its synchronous
+    functions: its asynchronous API starts workers from `blob:` URLs, which `worker-src 'self'`
+    forbids (PLAN 5.9). The worker is precached, so export and import work offline.
+12. **The reminder's "changed since the last export"** is computed from the items' `updated` times,
+    instead of a `changedSinceExport` flag that every save would have to write.
+13. **The Settings dialog starts in M2**, with Files ("Show all files") and Data (export, import);
+    the Settings button is enabled. M8 adds the appearance and other settings, M3c Sync, M11 About.
+14. **"Remove all data from this device"** (PLAN 4.5, Settings → Data) arrives with Settings → Sync
+    in M3c, where disconnecting is built too.
+15. **Unit tests have their own `tsconfig.test.json`** with Node's types for reading fixtures; the app
+    keeps browser types only.
+16. **The import fixtures** come from `scripts/fixtures.ts`. Names Windows refuses on disk (`what?`,
+    `CON`, `a:b.png`) and a `.git/` folder (Git will not track one inside a repository) are only inside
+    `source.zip`. `.gitattributes` marks the fixtures `-text` so the CRLF note and the byte-order mark
+    survive any checkout.
+17. **The failure banner is tested** by making IndexedDB writes to `texts` throw from a test init
+    script, as a full disk would.
+
+### Dependency added in M2
+
+| Package | Version | Licence | Purpose                                      | Ships                          |
+| ------- | ------- | ------- | -------------------------------------------- | ------------------------------ |
+| fflate  | 0.8.3   | MIT     | Zip and unzip for export and import (PLAN 3) | yes, in the zip worker (13 KB) |
+
+`npm audit --omit=dev`: 0 vulnerabilities.

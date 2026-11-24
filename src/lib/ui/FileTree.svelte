@@ -12,7 +12,7 @@
   import { tick } from 'svelte';
   import type { Session } from '../app/session.svelte.ts';
   import type { ItemRecord } from '../store/schema.ts';
-  import { sidebar as t } from '../strings.ts';
+  import { sidebar as t, transfer as transferText } from '../strings.ts';
   import type { TreeRow } from '../vault/tree.ts';
   import ContextMenu, { type MenuEntry } from './ContextMenu.svelte';
   import Icon from './Icon.svelte';
@@ -64,10 +64,9 @@
     if (row.item.kind === 'folder') {
       session.select(row.item.id);
       session.toggleFolder(row.item.id);
-    } else if (row.item.kind === 'note') {
-      session.open(row.item.id, newTab);
     } else {
-      session.select(row.item.id);
+      // Notes open in the editor, files in the image viewer (PLAN 4.3).
+      session.open(row.item.id, newTab);
     }
   }
 
@@ -161,11 +160,24 @@
         { label: t.newNote, run: () => void session.newNote(id) },
         { label: t.newSubfolder, run: () => void session.newFolder(id) },
         null,
+        { label: transferText.exportFolder, run: () => void session.exportZip(id) },
+        {
+          label: transferText.importHere,
+          run: () => {
+            session.importTarget = id;
+            session.openSettings('data');
+          },
+        },
+        null,
       );
     }
     entries.push({ label: t.rename, run: () => (session.renaming = id) });
-    if (item.kind === 'note')
-      entries.push({ label: t.duplicate, run: () => void session.duplicate(id) });
+    if (item.kind === 'note') {
+      entries.push(
+        { label: t.duplicate, run: () => void session.duplicate(id) },
+        { label: transferText.downloadMd, run: () => void session.downloadNote(id) },
+      );
+    }
     entries.push({ label: t.copyPath, run: () => void session.copyPath(id) }, null, {
       label: t.delete,
       danger: true,
@@ -246,7 +258,7 @@
       style:padding-left="{8 + row.depth * 16}px"
       onclick={(e) => activate(row, e.ctrlKey || e.metaKey)}
       onauxclick={(e) => {
-        if (e.button === 1 && item.kind === 'note') session.open(item.id, true);
+        if (e.button === 1 && item.kind !== 'folder') session.open(item.id, true);
       }}
       onkeydown={() => undefined}
       oncontextmenu={(e) => {

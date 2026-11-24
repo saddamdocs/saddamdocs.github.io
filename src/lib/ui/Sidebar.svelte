@@ -46,7 +46,12 @@
       pressed: session.sidebarView === 'trash',
       testid: 'trash-button',
     },
-    { icon: 'settings', label: t.settings, testid: 'settings' },
+    {
+      icon: 'settings',
+      label: t.settings,
+      run: () => session.openSettings('data'),
+      testid: 'settings',
+    },
   ]);
 
   /** Drags the sidebar's right edge. */

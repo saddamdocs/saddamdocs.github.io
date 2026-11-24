@@ -59,7 +59,7 @@ export default ts.config(
     languageOptions: {
       globals: { ...globals.browser, ...globals.node },
       parserOptions: {
-        project: ['./tsconfig.json', './tsconfig.node.json'],
+        project: ['./tsconfig.json', './tsconfig.test.json', './tsconfig.node.json'],
         tsconfigRootDir: import.meta.dirname,
         extraFileExtensions: ['.svelte'],
       },

@@ -1,0 +1,2 @@
+# Fixtures must stay byte for byte: CRLF notes, a byte-order mark, a file that is not UTF-8.
+tests/fixtures/** -text

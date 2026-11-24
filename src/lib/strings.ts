@@ -67,7 +67,7 @@ export const sidebar = {
   search: 'Search all notes (coming in M7)',
   calendar: 'Calendar (coming in M9)',
   trash: 'Trash',
-  settings: 'Settings (coming in M8)',
+  settings: 'Settings',
   vaultName: 'Notes',
   emptyVault: 'No notes yet. Create one with the first button above.',
   resize: 'Resize the sidebar',
@@ -104,6 +104,7 @@ export const notices = {
   operationFailed: 'That did not work: ',
   saveFailed: 'This note could not be saved. Tamanduá keeps your text and tries again.',
   retry: 'Retry',
+  exportNow: 'Export now',
 } as const;
 
 /** Why a name or an operation was refused (PLAN 4.3). */
@@ -132,4 +133,86 @@ export const status = {
   noNote: 'No note open',
   emptyPane: 'Open a note from the sidebar, or create one with New note.',
   openFailed: 'Could not open the note: ',
+} as const;
+
+/** Texts of files in the vault (PLAN 4.3). */
+export const files = {
+  notOnDevice: "This device does not have this file's contents.",
+  size: (bytes: number) =>
+    bytes < 1024
+      ? `${String(bytes)} bytes`
+      : bytes < 1024 * 1024
+        ? `${(bytes / 1024).toFixed(1)} KB`
+        : `${(bytes / 1024 / 1024).toFixed(1)} MB`,
+} as const;
+
+/** Texts of the History view (PLAN 4.3, "Local snapshots"). */
+export const history = {
+  menu: 'History',
+  title: 'History on this device',
+  close: 'Close',
+  empty:
+    'No snapshots yet. One is kept when a note was edited and then left alone for 5 minutes, and when its tab closes.',
+  restore: 'Restore this version',
+  restored: (when: string) => `Restored the version of ${when}. Ctrl+Z undoes it.`,
+  reasons: {
+    idle: 'after editing',
+    close: 'tab closed',
+    remote: 'before a change from another device',
+    merge: 'before a merge',
+    restore: 'before a restore',
+  },
+} as const;
+
+/** Texts of export, import and the reminder (PLAN 4.15). */
+export const transfer = {
+  exported: (name: string) => `Exported ${name}`,
+  exportedMissing: (name: string, n: number) =>
+    `Exported ${name}. ${String(n)} image(s) were left out: this device does not have their contents.`,
+  downloadMd: 'Download as .md',
+  exportFolder: 'Export folder',
+  importHere: 'Import here',
+  reminder: (days: number | null) =>
+    days === null
+      ? 'Your notes have never been exported. An export is a plain copy that needs neither Tamanduá nor a passphrase.'
+      : `Your notes were last exported ${String(days)} days ago, and they have changed since.`,
+  later: 'Later',
+  summaryTitle: 'Import finished',
+  summaryCounts: (notes: number, files: number, folders: number) =>
+    `${String(notes)} notes, ${String(files)} images and ${String(folders)} folders imported.`,
+  renamedTitle: 'Renamed',
+  skippedTitle: 'Skipped',
+  reasons: {
+    hidden: 'starts with a dot',
+    'not-utf8': 'not UTF-8 text',
+    'too-large': 'larger than 7 MB',
+    unsupported: 'not a Markdown note or a supported image',
+  },
+  undoImport: 'Undo import',
+  undone: 'Everything this import created is in the Trash.',
+  close: 'Close',
+} as const;
+
+/** Texts of the Settings dialog (PLAN 4.13, 4.15). M8 adds the other sections. */
+export const settingsText = {
+  title: 'Settings',
+  close: 'Close',
+  sections: { files: 'Files', data: 'Data' },
+  showAllFiles: 'Show all files in the tree',
+  showAllFilesHint: 'Images in the vault appear in the tree and open in a viewer.',
+  exportTitle: 'Export',
+  exportWarning:
+    'An export is not encrypted: anyone who gets the archive can read your notes. It is also the one backup that needs neither the passphrase nor the database.',
+  includeTrash: 'Include the Trash (under .trash/)',
+  exportVault: 'Export vault',
+  lastExport: (when: string | null) =>
+    when === null ? 'Never exported from this device.' : `Last exported from this device: ${when}.`,
+  importTitle: 'Import Markdown',
+  importHint:
+    'Folders keep their structure. .md and .markdown files become notes; PNG, JPEG, GIF, WebP and SVG images up to 7 MB become files. Nothing that exists is changed.',
+  importTarget: 'Import into',
+  topLevel: '(top level)',
+  chooseFiles: 'Choose files or a .zip…',
+  chooseFolder: 'Choose a folder…',
+  busy: 'Working…',
 } as const;

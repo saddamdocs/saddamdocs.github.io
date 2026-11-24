@@ -12,7 +12,13 @@
   import { channel } from '../channel.ts';
   import { status as t } from '../strings.ts';
   import { activeTab } from '../workspace/model.ts';
+  import { notices as noticeText, transfer as transferText } from '../strings.ts';
+  import Banner from './Banner.svelte';
   import ConfirmDialog from './ConfirmDialog.svelte';
+  import HistoryPanel from './HistoryPanel.svelte';
+  import ImageViewer from './ImageViewer.svelte';
+  import ImportSummary from './ImportSummary.svelte';
+  import SettingsDialog from './SettingsDialog.svelte';
   import NoteEditor from './NoteEditor.svelte';
   import Sidebar from './Sidebar.svelte';
   import StatusBar from './StatusBar.svelte';
@@ -67,13 +73,54 @@
       <Sidebar {session} />
     {/if}
     <section class="editor-area">
+      {#if session.reminder}
+        <!-- PLAN 4.15: the export reminder, with "Export now" and "Later" (a day). -->
+        <Banner
+          kind="info"
+          testid="export-reminder"
+          text={transferText.reminder(
+            session.lastExport === null
+              ? null
+              : Math.floor((Date.now() - session.lastExport) / 86_400_000),
+          )}
+          actions={[
+            { label: noticeText.exportNow, run: () => void session.exportZip() },
+            { label: transferText.later, run: () => session.snoozeReminder() },
+          ]}
+        />
+      {/if}
       {#if pane}
         <TabBar {session} {pane} index={session.workspace.focused} />
+        {#if session.saveState.status === 'failed'}
+          <!-- PLAN 4.4: a failed save keeps the text, retries, and offers Retry and Export now. -->
+          <Banner
+            kind="error"
+            text={noticeText.saveFailed}
+            testid="save-failed"
+            actions={[
+              { label: noticeText.retry, run: () => session.focusedSaver?.flush() },
+              { label: noticeText.exportNow, run: () => session.openSettings('data') },
+            ]}
+          />
+        {/if}
         <div class="pane">
-          {#if tab}
-            {#key `${tab.id}:${tab.itemId}`}
-              <NoteEditor {session} {tab} />
+          {#if tab && note?.kind === 'file'}
+            {#key tab.itemId}
+              <ImageViewer {session} itemId={tab.itemId} />
             {/key}
+          {:else if tab}
+            <div class="note-row">
+              <div class="note-editor">
+                {#key `${tab.id}:${tab.itemId}:${String(session.textEpoch[tab.itemId] ?? 0)}`}
+                  <NoteEditor {session} {tab} />
+                {/key}
+              </div>
+              {#if session.historyTab === tab.id}
+                {#key tab.itemId}
+                  <HistoryPanel {session} itemId={tab.itemId} />
+                {/key}
+              {/if}
+            </div>
           {:else}
             <p class="empty">{t.emptyPane}</p>
           {/if}
@@ -85,6 +132,8 @@
 </div>
 
 <ConfirmDialog {session} />
+<SettingsDialog {session} />
+<ImportSummary {session} />
 
 <style>
   .shell {
@@ -107,6 +156,14 @@
   .pane {
     flex: 1;
     min-height: 0;
+  }
+  .note-row {
+    display: flex;
+    height: 100%;
+  }
+  .note-editor {
+    flex: 1;
+    min-width: 0;
   }
   .empty {
     margin: 64px auto;

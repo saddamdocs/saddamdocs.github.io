@@ -17,6 +17,7 @@ import { applyAppearance } from '../settings/apply.ts';
 import { SettingsStore } from '../settings/store.ts';
 import { openVault, writeTx, type VaultDb } from '../store/db.ts';
 import { logEvent } from '../store/log.ts';
+import { requestPersistence } from '../store/persist.ts';
 import { SCHEMA_VERSION } from '../config.ts';
 import { newId } from '../vault/ids.ts';
 import { Vault } from '../vault/operations.ts';
@@ -104,5 +105,8 @@ async function startSession(db: VaultDb, notices: Notices): Promise<Session> {
   };
   purge();
   setInterval(purge, PURGE_INTERVAL_MS);
+  await session.loadExportState();
+  // PLAN 4.16: at every start until granted. Never awaited: start-up does not wait for it.
+  void requestPersistence(db).then((state) => (session.persistState = state));
   return session;
 }

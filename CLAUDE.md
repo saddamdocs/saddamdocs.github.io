@@ -17,6 +17,8 @@ a short reminder of commands and conventions. At the start of every session, rea
 | `npm run build:emulator`              | Next channel pointed at the emulator, into `dist-emulator/` (tests only) |
 | `npm run check:origins -- <channel>`  | PLAN 5.9 rule 4 on `dist/`                                               |
 | `npm run check:size`                  | PLAN 8 size budgets on `dist/`                                           |
+| `node scripts/fixtures.ts`            | Regenerates the import fixtures in `tests/fixtures/import/`              |
+| `node scripts/screens.ts <dir>`       | M1 screenshots (needs `vite preview` on 4173); `screens-m2.ts` for M2    |
 | `npm run icons`                       | Regenerates `public/icons/*.png` from the SVGs                           |
 | `npm run format`                      | Prettier, write mode                                                     |
 
@@ -30,6 +32,7 @@ The emulator needs Java 21+ and runs only through `firebase emulators:exec --pro
 - Tunables live in `src/lib/config.ts`, user-visible text in `src/lib/strings.ts`, colours in
   `src/lib/settings/themes.ts`, channel values and database addresses only in `src/lib/channel.ts`.
 - Every storage, cache, lock and channel name starts with the channel prefix (`storageName()`).
+- Unit tests are type-checked by `tsconfig.test.json` (Node types); the app by `tsconfig.json`.
 - Imports of local TypeScript files use the `.ts` extension (Node runs `scripts/` with type
   stripping, no build step).
 - Work on a branch `m<N>-<name>`, open a PR, let CI pass, merge. Tag `m<N>` only after Felipe accepts.

@@ -9,7 +9,7 @@
 -->
 <script lang="ts">
   import type { Session } from '../app/session.svelte.ts';
-  import { status as t } from '../strings.ts';
+  import { history as historyText, status as t, transfer as transferText } from '../strings.ts';
   import type { Pane } from '../workspace/model.ts';
   import ContextMenu, { type MenuEntry } from './ContextMenu.svelte';
   import Icon from './Icon.svelte';
@@ -62,7 +62,19 @@
         menu = {
           x: e.clientX,
           y: e.clientY,
-          entries: [{ label: t.closeTab, run: () => void session.closeTab(tab.id) }],
+          entries: [
+            ...(session.index.get(tab.itemId)?.kind === 'note'
+              ? [
+                  { label: historyText.menu, run: () => session.openHistory(tab.id) },
+                  {
+                    label: transferText.downloadMd,
+                    run: () => void session.downloadNote(tab.itemId),
+                  },
+                  null,
+                ]
+              : []),
+            { label: t.closeTab, run: () => void session.closeTab(tab.id) },
+          ],
         };
       }}
     >

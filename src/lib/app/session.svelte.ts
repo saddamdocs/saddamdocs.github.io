@@ -11,13 +11,28 @@
  * `workspace/store.ts`, `autosave/controller.ts`, `strings.ts`, `config.ts`.
  */
 
-import type { SaveRegistry } from '../autosave/controller.ts';
+import type { NoteSaver, SaveRegistry } from '../autosave/controller.ts';
+import type { PersistState } from '../store/persist.ts';
+import { readNumber, writeState } from '../store/state.ts';
+import { DAY_MS, reminderDue } from '../transfer/reminder.ts';
+import { dateStamp, downloadBlob } from '../transfer/download.ts';
+import { planExport, readExport } from '../transfer/exportZip.ts';
+import { planImport, type ImportReport, type SourceFile } from '../transfer/importFiles.ts';
+import { zip, unzip } from '../transfer/zip.ts';
+import { exportName } from '../vault/names.ts';
+import type { EditorView } from '@codemirror/view';
 import { CLEAN, type SaveState } from '../autosave/machine.ts';
 import { WORKSPACE_PROMPT_SAVE_MS, WORKSPACE_SAVE_DELAY_MS } from '../config.ts';
 import { DEFAULT_SETTINGS, type Settings } from '../settings/schema.ts';
 import type { SettingsStore } from '../settings/store.ts';
 import { logEvent } from '../store/log.ts';
-import { notices as noticeText, problems, sidebar as sidebarText } from '../strings.ts';
+import {
+  history as historyText,
+  notices as noticeText,
+  transfer as transferText,
+  problems,
+  sidebar as sidebarText,
+} from '../strings.ts';
 import type { OpProblem, OpResult, Vault } from '../vault/operations.ts';
 import { VaultIndex } from '../vault/tree.ts';
 import {
@@ -31,6 +46,12 @@ import {
 } from '../workspace/model.ts';
 import type { WorkspaceSaver } from '../workspace/store.ts';
 import type { Notices, Snack } from './notices.svelte.ts';
+
+/** How notices write a time. */
+const TIME_FORMAT = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+
+/** The sections of the Settings dialog. M8 adds Appearance and the rest. */
+export type SettingsSection = 'files' | 'data';
 
 /** A question that needs a yes before a destructive action (PLAN 4.3). */
 export interface Confirmation {
@@ -49,6 +70,32 @@ export class Session {
   settings: Settings = $state.raw({ ...DEFAULT_SETTINGS });
   /** Save state of the note in the focused pane. */
   saveState: SaveState = $state.raw(CLEAN);
+  /** Whether the browser keeps this site's storage (PLAN 4.16); shown in Settings. */
+  persistState: PersistState = $state('not-yet');
+  /** The saver of the note in the focused pane, for Retry on the failure banner. */
+  focusedSaver: NoteSaver | null = null;
+  /** The editor of the focused note, for restoring a snapshot as an undoable edit. */
+  focusedEditor: { itemId: string; view: EditorView } | null = null;
+  /**
+   * Raised for a note whose stored text changed outside its editor (image links rewritten by a
+   * move, PLAN 4.3); the shell keys the editor on it, so the editor reloads the text.
+   */
+  textEpoch: Record<string, number> = $state({});
+  /** The tab whose History view is open, or null (PLAN 4.3). */
+  historyTab: string | null = $state(null);
+  /** The section of the Settings dialog that is open, or null when it is closed. */
+  settingsSection: SettingsSection | null = $state(null);
+  /** The last export of the whole vault from this device, in ms, or null (PLAN 4.15). */
+  lastExport: number | null = $state(null);
+  /** The export reminder banner shows (PLAN 4.15). */
+  reminder = $state(false);
+  /** The summary of the last import, shown in a dialog, or null (PLAN 4.15). */
+  importResult: { report: ImportReport; created: string[]; undone: boolean } | null = $state(null);
+  /** An export or import is running. */
+  transferBusy = $state(false);
+  /** Folder a new import lands in, chosen in Settings → Data or by "Import here". */
+  importTarget = $state('');
+  private snoozedUntil: number | null = null;
   /** Word count of the note in the focused pane (PLAN 4.1, status bar). */
   wordCount: number = $state(0);
   confirmation: Confirmation | null = $state(null);
@@ -83,6 +130,7 @@ export class Session {
     ).workspace;
     vault.subscribe(() => {
       this.index = vault.index;
+      this.updateReminder();
       const { workspace: next, closed } = closeMissing(
         this.workspace,
         (id) => this.index.isLive(id),
@@ -290,14 +338,19 @@ export class Session {
   async move(itemId: string, parent: string): Promise<void> {
     const item = this.index.get(itemId);
     if (item === undefined || this.index.parentOf(item) === parent) return;
+    await this.flushOpenNotes();
     const token = await this.attempt('move-failed', () => this.vault.move(itemId, parent));
     if (token === null) return;
+    this.reloadTexts(token.rewritten);
     if (parent !== '') this.setWorkspace(setExpanded(this.workspace, parent, true));
     this.notify(noticeText.moved(item.name), {
       label: noticeText.undo,
       run: () => {
         this.notices.dismiss();
-        void this.vault.undo(token).catch((error: unknown) => this.fail('undo-failed', error));
+        void this.flushOpenNotes()
+          .then(() => this.vault.undo(token))
+          .then((rewritten) => this.reloadTexts(rewritten))
+          .catch((error: unknown) => this.fail('undo-failed', error));
       },
     });
   }
@@ -379,6 +432,200 @@ export class Session {
         run();
       },
     };
+  }
+
+  /**
+   * Makes open editors of these notes reload their text from storage.
+   *
+   * @param ids - Notes whose stored text changed outside their editor.
+   */
+  reloadTexts(ids: readonly string[]): void {
+    if (ids.length === 0) return;
+    const next = { ...this.textEpoch };
+    for (const id of ids) next[id] = (next[id] ?? 0) + 1;
+    this.textEpoch = next;
+  }
+
+  /**
+   * Opens the History view of a tab (PLAN 4.3).
+   *
+   * @param tabId - The tab.
+   */
+  openHistory(tabId: string): void {
+    this.historyTab = tabId;
+  }
+
+  /** Closes the History view. */
+  closeHistory(): void {
+    this.historyTab = null;
+  }
+
+  /**
+   * Restores a snapshot into the open note as one ordinary edit, so Ctrl+Z undoes it and it saves
+   * (and, from M3a, syncs) like typing (PLAN 4.3). The current text is snapshotted first.
+   *
+   * @param itemId - The note.
+   * @param text - The snapshot's text.
+   * @param time - When the snapshot was taken, in ms, for the notice.
+   */
+  async restoreSnapshot(itemId: string, text: string, time: number): Promise<void> {
+    const editor = this.focusedEditor;
+    if (editor === null || editor.itemId !== itemId) return;
+    try {
+      await this.vault.snapshot(itemId, editor.view.state.doc.toString(), 'restore', true);
+      editor.view.dispatch({
+        changes: { from: 0, to: editor.view.state.doc.length, insert: text },
+        userEvent: 'input.restore',
+      });
+      this.notify(historyText.restored(TIME_FORMAT.format(time)));
+    } catch (error) {
+      this.fail('restore-snapshot-failed', error);
+    }
+  }
+
+  /**
+   * Opens the Settings dialog.
+   *
+   * @param section - The section to show.
+   */
+  openSettings(section: SettingsSection = 'data'): void {
+    this.settingsSection = section;
+  }
+
+  /**
+   * Reads the export facts from storage and decides whether the reminder shows. Called at start.
+   *
+   * @returns Resolves when read.
+   */
+  async loadExportState(): Promise<void> {
+    this.lastExport = await readNumber(this.vault.db, 'lastExport');
+    this.snoozedUntil = await readNumber(this.vault.db, 'exportSnoozedUntil');
+    this.updateReminder();
+  }
+
+  /** Recomputes the reminder from the vault and the export facts (PLAN 4.15). */
+  private updateReminder(): void {
+    let lastChange = 0;
+    let noteCount = 0;
+    for (const item of this.index.byId.values()) {
+      if (item.kind === 'settings') continue;
+      lastChange = Math.max(lastChange, item.updated);
+      if (item.kind === 'note' && this.index.isLive(item.id)) noteCount += 1;
+    }
+    this.reminder = reminderDue({
+      now: Date.now(),
+      lastExport: this.lastExport,
+      snoozedUntil: this.snoozedUntil,
+      lastChange,
+      noteCount,
+      days: this.settings.exportReminderDays,
+    });
+  }
+
+  /** "Later" on the reminder: waits a day (PLAN 4.15). */
+  snoozeReminder(): void {
+    this.snoozedUntil = Date.now() + DAY_MS;
+    this.reminder = false;
+    writeState(this.vault.db, 'exportSnoozedUntil', this.snoozedUntil).catch((error: unknown) =>
+      this.fail('snooze-failed', error),
+    );
+  }
+
+  /**
+   * "Download as .md" (PLAN 4.15): one note as a `.md` file, byte for byte its text.
+   *
+   * @param itemId - The note.
+   */
+  async downloadNote(itemId: string): Promise<void> {
+    const item = this.index.get(itemId);
+    if (item?.kind !== 'note') return;
+    try {
+      await this.flushOpenNotes();
+      const text = (await this.vault.readText(itemId)) ?? '';
+      downloadBlob(
+        exportName(item.name, 'note'),
+        new Blob([text], { type: 'text/markdown;charset=utf-8' }),
+      );
+    } catch (error) {
+      this.fail('download-failed', error);
+    }
+  }
+
+  /**
+   * Exports the whole vault, or one folder, as a `.zip` of plain Markdown (PLAN 4.15).
+   *
+   * @param folderId - A folder to export, or `""` for the whole vault.
+   * @param includeTrash - Put the Trash under `.trash/` (whole vault only).
+   */
+  async exportZip(folderId = '', includeTrash = false): Promise<void> {
+    if (this.transferBusy) return;
+    this.transferBusy = true;
+    try {
+      await this.flushOpenNotes();
+      const plan = planExport(this.index, folderId, includeTrash && folderId === '');
+      const { entries, missing } = await readExport(this.vault, plan);
+      const archive = await zip(entries);
+      const folder = folderId === '' ? undefined : this.index.get(folderId);
+      const name =
+        folder === undefined ? `tamandua-${dateStamp()}.zip` : `${folder.name}-${dateStamp()}.zip`;
+      downloadBlob(name, new Blob([archive], { type: 'application/zip' }));
+      if (folderId === '') {
+        this.lastExport = Date.now();
+        await writeState(this.vault.db, 'lastExport', this.lastExport);
+        this.updateReminder();
+      }
+      this.notify(
+        missing.length === 0
+          ? transferText.exported(name)
+          : transferText.exportedMissing(name, missing.length),
+      );
+    } catch (error) {
+      this.fail('export-failed', error);
+    } finally {
+      this.transferBusy = false;
+    }
+  }
+
+  /**
+   * Imports picked files (PLAN 4.15): loose `.md` files and images land in the target folder; a
+   * `.zip` is opened and its top level lands there; files from a folder pick keep their paths.
+   *
+   * @param sources - Files with their paths, from a folder pick, or plain files.
+   * @param zips - Picked `.zip` files, to open.
+   * @param target - The folder the import lands in, or `""` for the root.
+   */
+  async importSources(sources: SourceFile[], zips: readonly File[], target: string): Promise<void> {
+    if (this.transferBusy) return;
+    this.transferBusy = true;
+    try {
+      const all = [...sources];
+      for (const file of zips) {
+        const entries = await unzip(new Uint8Array(await file.arrayBuffer()));
+        for (const [path, bytes] of Object.entries(entries)) all.push({ path, bytes });
+      }
+      const folder = this.index.isLive(target) ? target : '';
+      const plan = planImport(all, this.index, folder);
+      const ids = await this.vault.importItems(folder, plan.items);
+      const created = ids.filter((_id, i) => plan.items[i]?.parent === -1);
+      if (folder !== '') this.setWorkspace(setExpanded(this.workspace, folder, true));
+      this.importResult = { report: plan.report, created, undone: false };
+    } catch (error) {
+      this.fail('import-failed', error);
+    } finally {
+      this.transferBusy = false;
+    }
+  }
+
+  /** "Undo import": moves everything the last import created to the Trash (PLAN 4.15). */
+  async undoImport(): Promise<void> {
+    const result = this.importResult;
+    if (result === null || result.undone) return;
+    try {
+      await this.vault.deleteMany(result.created);
+      this.importResult = { ...result, undone: true };
+    } catch (error) {
+      this.fail('undo-import-failed', error);
+    }
   }
 
   /**
