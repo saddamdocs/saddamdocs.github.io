@@ -118,6 +118,23 @@ export function sourceExtensions(hooks: EditorHooks): Extension[] {
 }
 
 /**
+ * The extensions of a read-only view of a text, such as a snapshot in the History view.
+ *
+ * @returns The extension list.
+ */
+export function readOnlyExtensions(): Extension[] {
+  return [
+    EditorView.lineWrapping,
+    markdown({ base: commonmarkLanguage, extensions: GFM }),
+    syntaxHighlighting(sourceHighlight),
+    editorTheme,
+    EditorView.theme({ '.cm-content': { padding: '12px' } }),
+    EditorState.readOnly.of(true),
+    EditorView.editable.of(false),
+  ];
+}
+
+/**
  * Creates an editor for a note.
  *
  * @param parent - The element to draw into.

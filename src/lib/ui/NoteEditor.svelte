@@ -16,6 +16,8 @@
   import { NoteSaver } from '../autosave/controller.ts';
   import { createEditor } from '../editor/setup.ts';
   import { countWords } from '../editor/words.ts';
+  import { SNAPSHOT_IDLE_MS } from '../config.ts';
+  import { logEvent } from '../store/log.ts';
   import { status as t } from '../strings.ts';
   import type { Tab } from '../workspace/model.ts';
 
@@ -35,6 +37,24 @@
     let view: EditorView | null = null;
     let saver: NoteSaver | null = null;
     let closed = false;
+    let editedSinceSnapshot = false;
+    let idleTimer: ReturnType<typeof setTimeout> | undefined;
+
+    /** Keeps a snapshot of the current text; the vault applies the 10-minute rule. */
+    const snapshot = (reason: 'idle' | 'close'): void => {
+      if (!editedSinceSnapshot || view === null) return;
+      editedSinceSnapshot = false;
+      session.vault
+        .snapshot(itemId, view.state.doc.toString(), reason)
+        .catch((error: unknown) =>
+          logEvent(
+            session.vault.db,
+            'warn',
+            'snapshot-failed',
+            error instanceof Error ? error.name : '',
+          ),
+        );
+    };
 
     void session.vault.readText(itemId).then(
       (text) => {
@@ -45,16 +65,22 @@
         });
         saver = newSaver;
         session.saves.add(newSaver);
+        session.focusedSaver = newSaver;
         session.saveState = newSaver.current;
         view = createEditor(element, text ?? '', cursor, {
           onEdit: () => {
             newSaver.edit();
             session.wordCount = countWords(current());
+            // PLAN 4.3: a note edited and then left alone for 5 minutes gets a snapshot.
+            editedSinceSnapshot = true;
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(() => snapshot('idle'), SNAPSHOT_IDLE_MS);
           },
           onBlur: () => newSaver.flush(),
           onSaveNow: () => newSaver.flush(),
           onPosition: (c, s) => session.rememberPosition(tabId, c, s),
         });
+        session.focusedEditor = { itemId, view };
         view.scrollDOM.scrollTop = scroll;
         session.wordCount = countWords(text ?? '');
         // A note just created has its name field focused in the tree; leave the focus there.
@@ -66,10 +92,15 @@
 
     return () => {
       closed = true;
+      clearTimeout(idleTimer);
+      // PLAN 4.3: a snapshot when the tab closes.
+      snapshot('close');
+      if (session.focusedEditor?.view === view) session.focusedEditor = null;
       const s = saver;
       const v = view;
       if (s !== null) {
         // Save before letting go; the view's last state stays readable after destroy().
+        if (session.focusedSaver === s) session.focusedSaver = null;
         void s.flushAndWait().finally(() => {
           s.dispose();
           session.saves.remove(s);
