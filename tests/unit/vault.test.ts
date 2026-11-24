@@ -279,3 +279,89 @@ describe('saving text (PLAN 4.4)', () => {
     expect(reloaded.index.get(n.id)?.base?.name).toBe('plan');
   });
 });
+
+describe('image links follow a moved note (PLAN 4.3)', () => {
+  it('rewrites links in the move, and Undo rewrites them back, keeping later edits', async () => {
+    const ideas = ok(await vault.createFolder('', 'ideas'));
+    const other = ok(await vault.createFolder('', 'other'));
+    const [, note] = await vault.importItems(ideas.id, [
+      {
+        kind: 'file',
+        name: 'map.png',
+        parent: -1,
+        bytes: new Uint8Array([1, 2, 3]),
+        mime: 'image/png',
+      },
+      { kind: 'note', name: 'plan', parent: -1, text: 'See ![](map.png).' },
+    ]);
+    const token = ok(await vault.move(note!, other.id));
+    expect(token.rewritten).toEqual([note]);
+    expect(await vault.readText(note!)).toBe('See ![](../ideas/map.png).');
+    await vault.saveText(note!, 'See ![](../ideas/map.png). More.');
+    expect(await vault.undo(token)).toEqual([note]);
+    expect(await vault.readText(note!)).toBe('See ![](map.png). More.');
+  });
+
+  it('a moved folder rewrites nothing', async () => {
+    const ideas = ok(await vault.createFolder('', 'ideas'));
+    const other = ok(await vault.createFolder('', 'other'));
+    const [, note] = await vault.importItems(ideas.id, [
+      { kind: 'file', name: 'map.png', parent: -1, bytes: new Uint8Array([1]), mime: 'image/png' },
+      { kind: 'note', name: 'plan', parent: -1, text: '![](map.png)' },
+    ]);
+    const token = ok(await vault.move(ideas.id, other.id));
+    expect(token.rewritten).toEqual([]);
+    expect(await vault.readText(note!)).toBe('![](map.png)');
+  });
+});
+
+describe('snapshots (PLAN 4.3)', () => {
+  it('keeps at most one per 10 minutes, none for an unchanged text, and 20 at most', async () => {
+    const n = ok(await vault.createNote('', 'plan'));
+    expect(await vault.snapshot(n.id, 'v1', 'idle')).toBe(true);
+    now += 9 * 60_000;
+    expect(await vault.snapshot(n.id, 'v2', 'idle')).toBe(false);
+    now += 60_000;
+    expect(await vault.snapshot(n.id, 'v1', 'idle')).toBe(false);
+    expect(await vault.snapshot(n.id, 'v2', 'close')).toBe(true);
+    expect(await vault.snapshot(n.id, 'v3', 'merge', true)).toBe(true);
+    for (let i = 0; i < 30; i += 1) {
+      now += 10 * 60_000;
+      await vault.snapshot(n.id, `t${String(i)}`, 'idle');
+    }
+    const list = await vault.listSnapshots(n.id);
+    expect(list).toHaveLength(20);
+    expect(list[0]?.text).toBe('t29');
+    expect(list[19]?.text).toBe('t10');
+  });
+
+  it('deleting a note forever deletes its snapshots', async () => {
+    const n = ok(await vault.createNote('', 'plan'));
+    await vault.snapshot(n.id, 'v1', 'idle');
+    await vault.deleteForever([n.id]);
+    expect(await vault.listSnapshots(n.id)).toEqual([]);
+  });
+});
+
+describe('import and batch delete (PLAN 4.15)', () => {
+  it('creates folders, notes and files in one change, with the file hash', async () => {
+    const ids = await vault.importItems('', [
+      { kind: 'folder', name: 'ideas', parent: -1 },
+      { kind: 'folder', name: 'empty', parent: 0 },
+      { kind: 'note', name: 'plan', parent: 0, text: 'olá' },
+      {
+        kind: 'file',
+        name: 'a.png',
+        parent: 0,
+        bytes: new TextEncoder().encode('abc'),
+        mime: 'image/png',
+      },
+    ]);
+    expect(tree()).toEqual(['ideas', '  empty', '  plan']);
+    const file = vault.index.get(ids[3]!);
+    expect(file?.sha256).toBe('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+    expect(await (await vault.readFile(ids[3]!))?.text()).toBe('abc');
+    await vault.deleteMany([ids[0]!]);
+    expect(tree()).toEqual([]);
+  });
+});

@@ -83,3 +83,25 @@ export const LOCK_YIELD_TIMEOUT_MS = 2000;
  * the app stays open, besides at start).
  */
 export const PURGE_INTERVAL_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Snapshots kept per note on this device (PLAN 4.3: 20). More gives a longer history and uses more
+ * of the browser's storage.
+ */
+export const SNAPSHOT_LIMIT = 20;
+
+/**
+ * A note edited and then left alone this long gets a snapshot, in ms (PLAN 4.3: 5 minutes).
+ */
+export const SNAPSHOT_IDLE_MS = 5 * 60 * 1000;
+
+/**
+ * Least time between two snapshots of one note, in ms (PLAN 4.3: 10 minutes). Only a merge
+ * (PLAN 6.3) may snapshot sooner.
+ */
+export const SNAPSHOT_MIN_INTERVAL_MS = 10 * 60 * 1000;
+
+/**
+ * Largest file the vault takes, in bytes (PLAN 4.2, 4.15, 5.5: 7,000,000, the sync limit).
+ */
+export const MAX_FILE_BYTES = 7_000_000;
