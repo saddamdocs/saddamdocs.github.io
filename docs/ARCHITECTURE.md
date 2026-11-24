@@ -2,7 +2,7 @@
 
 A map of the modules and short guides for later changes (PLAN 10, "Comments and maintainability").
 Keep it in step with the code: a stale entry is a defect. PLAN 5 describes the target design; this
-file describes what exists now (M1).
+file describes what exists now (M2).
 
 ## How the pieces fit
 
@@ -18,58 +18,73 @@ App.svelte ─ one-window lock → boot() → Welcome | Shell | lock / newer-dat
   ui/ ─ components read Session fields and call Session methods; nothing else writes
 ```
 
+Export goes: `Session.exportZip` → `transfer/exportZip.ts` plans the paths and reads the bytes →
+`transfer/zip.ts` → the zip worker → `transfer/download.ts`. Import goes the other way:
+picker → `transfer/zip.ts` (for a `.zip`) → `transfer/importFiles.ts` plans every item and the
+summary → `Vault.importItems` writes them in one transaction.
+
 A user action goes: component → `Session` method → `Vault` operation (one strict IndexedDB
 transaction) → the vault's listeners → `Session.index` replaced → components update. Typing goes:
 CodeMirror → `NoteSaver.edit()` → timer → `Vault.saveText()`.
 
 ## Module map
 
-| Path                             | Job                                                                                                                                         |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `index.html`                     | The page; CSP, title and splash colours filled in at build time                                                                             |
-| `vite.config.ts`                 | Modes (channels), defines, HTML placeholders, PWA plugin, probe stub                                                                        |
-| `src/main.ts`                    | Default appearance, mounts `App.svelte`, removes the splash                                                                                 |
-| `src/App.svelte`                 | Lock, start-up phases, update prompt, probe entry                                                                                           |
-| `src/app.css`                    | Global element styles, buttons, the focus ring of PLAN 4.9                                                                                  |
-| `src/lib/channel.ts`             | Channel table and the running `channel`; the only home of database URLs                                                                     |
-| `src/lib/config.ts`              | Every tunable value, with unit and range                                                                                                    |
-| `src/lib/build.ts`               | Version, commit and build date injected by Vite                                                                                             |
-| `src/lib/csp.ts`                 | The content security policy text (PLAN 5.9)                                                                                                 |
-| `src/lib/strings.ts`             | Every text shown to the user                                                                                                                |
-| `src/lib/device.ts`              | Default device name ("Linux · Brave")                                                                                                       |
-| `src/lib/updates.ts`             | Service worker registration, hourly update check, reload on request                                                                         |
-| `src/lib/app/boot.ts`            | Start-up order; "Use only on this device for now"                                                                                           |
-| `src/lib/app/session.svelte.ts`  | Running state and actions; reports refusals and failures                                                                                    |
-| `src/lib/app/notices.svelte.ts`  | The snackbar's state                                                                                                                        |
-| `src/lib/store/schema.ts`        | Record types of every IndexedDB store (PLAN 5.3)                                                                                            |
-| `src/lib/store/db.ts`            | Opening, migrations, newer-data guard, `writeTx` with strict durability                                                                     |
-| `src/lib/store/log.ts`           | Diagnostic log, 500 entries, no note text                                                                                                   |
-| `src/lib/vault/ids.ts`           | Item ids (PLAN 5.5)                                                                                                                         |
-| `src/lib/vault/names.ts`         | Name rules, clashes, free names (PLAN 4.3)                                                                                                  |
-| `src/lib/vault/records.ts`       | New records and `changed()`: the sync bookkeeping of every local change                                                                     |
-| `src/lib/vault/tree.ts`          | `VaultIndex`: parents, paths, Trash, tree rows, Trash entries                                                                               |
-| `src/lib/vault/operations.ts`    | `Vault`: every operation on items and texts                                                                                                 |
-| `src/lib/settings/schema.ts`     | Settings, defaults, ranges, safe parsing                                                                                                    |
-| `src/lib/settings/store.ts`      | Settings item load and save                                                                                                                 |
-| `src/lib/settings/themes.ts`     | Theme variables (Tamanduá Light)                                                                                                            |
-| `src/lib/settings/fonts.ts`      | Font registry; the only file with font names                                                                                                |
-| `src/lib/settings/apply.ts`      | Writes theme, fonts and sizes as CSS variables                                                                                              |
-| `src/lib/workspace/model.ts`     | Panes, tabs, expanded folders; pure functions                                                                                               |
-| `src/lib/workspace/store.ts`     | Workspace load and coalesced save                                                                                                           |
-| `src/lib/autosave/machine.ts`    | The save state machine of PLAN 6.2 (pure)                                                                                                   |
-| `src/lib/autosave/controller.ts` | Runs it: timers, writes, retries; page hide and close                                                                                       |
-| `src/lib/editor/setup.ts`        | CodeMirror source mode                                                                                                                      |
-| `src/lib/editor/words.ts`        | Word count                                                                                                                                  |
-| `src/lib/instance/lock.ts`       | One window at a time (PLAN 5.10)                                                                                                            |
-| `src/lib/sync/rest.ts`           | All database requests; M0 has only the spike D probe                                                                                        |
-| `src/lib/probe/`                 | Spike B and D probe page (next channel only)                                                                                                |
-| `src/lib/ui/`                    | Components: Shell, Sidebar, FileTree, TrashView, TabBar, NoteEditor, StatusBar, Welcome, Screen, Snackbar, ConfirmDialog, ContextMenu, Icon |
-| `scripts/`                       | Icons, origin and size checks, release notes, screenshots                                                                                   |
-| `database.rules.json`            | Appendix B, byte for byte                                                                                                                   |
-| `tests/unit/`                    | Vitest, pure logic and the vault on fake-indexeddb                                                                                          |
-| `tests/rules/`                   | Vitest against the emulator                                                                                                                 |
-| `tests/ui/`                      | Playwright against `vite preview` of the next and emulator builds                                                                           |
-| `tests/support/`                 | Emulator helpers and UI helpers                                                                                                             |
+| Path                              | Job                                                                                                                                         |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.html`                      | The page; CSP, title and splash colours filled in at build time                                                                             |
+| `vite.config.ts`                  | Modes (channels), defines, HTML placeholders, PWA plugin, probe stub                                                                        |
+| `src/main.ts`                     | Default appearance, mounts `App.svelte`, removes the splash                                                                                 |
+| `src/App.svelte`                  | Lock, start-up phases, update prompt, probe entry                                                                                           |
+| `src/app.css`                     | Global element styles, buttons, the focus ring of PLAN 4.9                                                                                  |
+| `src/lib/channel.ts`              | Channel table and the running `channel`; the only home of database URLs                                                                     |
+| `src/lib/config.ts`               | Every tunable value, with unit and range                                                                                                    |
+| `src/lib/build.ts`                | Version, commit and build date injected by Vite                                                                                             |
+| `src/lib/csp.ts`                  | The content security policy text (PLAN 5.9)                                                                                                 |
+| `src/lib/strings.ts`              | Every text shown to the user                                                                                                                |
+| `src/lib/device.ts`               | Default device name ("Linux · Brave")                                                                                                       |
+| `src/lib/updates.ts`              | Service worker registration, hourly update check, reload on request                                                                         |
+| `src/lib/app/boot.ts`             | Start-up order; "Use only on this device for now"                                                                                           |
+| `src/lib/app/session.svelte.ts`   | Running state and actions; reports refusals and failures                                                                                    |
+| `src/lib/app/notices.svelte.ts`   | The snackbar's state                                                                                                                        |
+| `src/lib/store/schema.ts`         | Record types of every IndexedDB store (PLAN 5.3)                                                                                            |
+| `src/lib/store/db.ts`             | Opening, migrations, newer-data guard, `writeTx` with strict durability                                                                     |
+| `src/lib/store/log.ts`            | Diagnostic log, 500 entries, no note text                                                                                                   |
+| `src/lib/vault/ids.ts`            | Item ids (PLAN 5.5)                                                                                                                         |
+| `src/lib/vault/names.ts`          | Name rules, clashes, free names (PLAN 4.3)                                                                                                  |
+| `src/lib/vault/records.ts`        | New records and `changed()`: the sync bookkeeping of every local change                                                                     |
+| `src/lib/vault/tree.ts`           | `VaultIndex`: parents, paths, Trash, tree rows, Trash entries                                                                               |
+| `src/lib/vault/operations.ts`     | `Vault`: every operation on items and texts                                                                                                 |
+| `src/lib/vault/links.ts`          | Image links: find, look up (PLAN 4.3), rewrite on a move, follow import renames                                                             |
+| `src/lib/store/state.ts`          | Typed reads and writes of the `state` store                                                                                                 |
+| `src/lib/store/persist.ts`        | The persistent-storage request at every start (PLAN 4.16)                                                                                   |
+| `src/lib/transfer/exportZip.ts`   | Export plan and bytes (PLAN 4.15)                                                                                                           |
+| `src/lib/transfer/importFiles.ts` | Import plan, name fixes, summary (PLAN 4.15)                                                                                                |
+| `src/lib/transfer/reminder.ts`    | When the export reminder shows                                                                                                              |
+| `src/lib/transfer/zip.ts`         | Page side of the zip worker                                                                                                                 |
+| `src/lib/transfer/zip.worker.ts`  | The worker: fflate's synchronous zip and unzip                                                                                              |
+| `src/lib/transfer/zipCore.ts`     | Zip and unzip functions, shared by the worker and the tests                                                                                 |
+| `src/lib/transfer/download.ts`    | Saving a Blob through the browser's download; date stamps                                                                                   |
+| `src/lib/settings/schema.ts`      | Settings, defaults, ranges, safe parsing                                                                                                    |
+| `src/lib/settings/store.ts`       | Settings item load and save                                                                                                                 |
+| `src/lib/settings/themes.ts`      | Theme variables (Tamanduá Light)                                                                                                            |
+| `src/lib/settings/fonts.ts`       | Font registry; the only file with font names                                                                                                |
+| `src/lib/settings/apply.ts`       | Writes theme, fonts and sizes as CSS variables                                                                                              |
+| `src/lib/workspace/model.ts`      | Panes, tabs, expanded folders; pure functions                                                                                               |
+| `src/lib/workspace/store.ts`      | Workspace load and coalesced save                                                                                                           |
+| `src/lib/autosave/machine.ts`     | The save state machine of PLAN 6.2 (pure)                                                                                                   |
+| `src/lib/autosave/controller.ts`  | Runs it: timers, writes, retries; page hide and close                                                                                       |
+| `src/lib/editor/setup.ts`         | CodeMirror source mode                                                                                                                      |
+| `src/lib/editor/words.ts`         | Word count                                                                                                                                  |
+| `src/lib/instance/lock.ts`        | One window at a time (PLAN 5.10)                                                                                                            |
+| `src/lib/sync/rest.ts`            | All database requests; M0 has only the spike D probe                                                                                        |
+| `src/lib/probe/`                  | Spike B and D probe page (next channel only)                                                                                                |
+| `src/lib/ui/`                     | Components: Shell, Sidebar, FileTree, TrashView, TabBar, NoteEditor, StatusBar, Welcome, Screen, Snackbar, ConfirmDialog, ContextMenu, Icon |
+| `scripts/`                        | Icons, origin and size checks, release notes, screenshots                                                                                   |
+| `database.rules.json`             | Appendix B, byte for byte                                                                                                                   |
+| `tests/unit/`                     | Vitest, pure logic and the vault on fake-indexeddb                                                                                          |
+| `tests/rules/`                    | Vitest against the emulator                                                                                                                 |
+| `tests/ui/`                       | Playwright against `vite preview` of the next and emulator builds                                                                           |
+| `tests/support/`                  | Emulator helpers and UI helpers                                                                                                             |
 
 ## How builds differ by channel
 
@@ -130,6 +145,12 @@ theme, and, if it is a text colour, add it to the pairs of `tests/unit/themes.te
 
 Add a method to `Session` that calls the `Vault` (or the workspace functions) and reports a refusal
 or failure through `notify`. Components call the method; they never write to the vault themselves.
+
+### …add a file type that import accepts
+
+Add its extension and MIME type to `IMAGE_TYPES` in `src/lib/transfer/importFiles.ts` (the limit of
+`MAX_FILE_BYTES` applies), a sample to `scripts/fixtures.ts`, regenerate the fixtures, and update
+the expectations in `tests/unit/transfer.test.ts`. M5 shows it in the editor.
 
 ### …add a remote origin the app may use
 
