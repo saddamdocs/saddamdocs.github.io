@@ -264,10 +264,13 @@
         if (item.kind === 'folder') onDrop(e, item.id);
       }}
     >
-      <span class="chevron" class:open={row.expanded} class:hidden={item.kind !== 'folder'}>
-        <Icon name="chevron" size={14} />
-      </span>
-      {#if item.kind === 'file'}<span class="kind"><Icon name="image" size={14} /></span>{/if}
+      <!-- Felipe's choice at the M1 gate: notes keep no empty chevron space, so a note's first
+           letter lines up with the chevrons of the folders beside it. Files show their icon there. -->
+      {#if item.kind === 'folder'}
+        <span class="chevron" class:open={row.expanded}><Icon name="chevron" size={14} /></span>
+      {:else if item.kind === 'file'}
+        <span class="kind"><Icon name="image" size={14} /></span>
+      {/if}
       {#if session.renaming === item.id}
         <span class="rename-box">
           <input
@@ -351,9 +354,6 @@
   }
   .chevron.open {
     transform: rotate(90deg);
-  }
-  .chevron.hidden {
-    visibility: hidden;
   }
   .kind {
     display: inline-flex;

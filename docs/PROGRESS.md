@@ -4,11 +4,11 @@ Updated at the end of every session (PLAN 10, "Process").
 
 ## Status
 
-| Milestone | State                                                      |
-| --------- | ---------------------------------------------------------- |
-| M0        | Accepted by Felipe on 20 November 2026; tagged `m0`        |
-| M1        | Built; waiting for Felipe's checks and screenshot approval |
-| M2 to M11 | Not started                                                |
+| Milestone | State                                                                                      |
+| --------- | ------------------------------------------------------------------------------------------ |
+| M0        | Accepted by Felipe on 20 November 2026; tagged `m0`                                        |
+| M1        | Accepted by Felipe on 24 November 2026, with the tree indent and gear changes; tagged `m1` |
+| M2 to M11 | Not started                                                                                |
 
 ## M0: environment, skeleton and deploy
 
@@ -34,24 +34,23 @@ Branch `m0-skeleton`.
 
 Branch `m1-vault`.
 
-| #   | Task                                                                                                                                                                      | State                     |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| 1   | Dependencies (idb, CodeMirror, Fontsource, fake-indexeddb); `fonts.ts` with Inter and JetBrains Mono                                                                      | done                      |
-| 2   | `store/`: IndexedDB schema of 5.3, migrations, newer-version guard, strict write transactions                                                                             | done                      |
-| 3   | `vault/` pure logic: ids, name rules, paths, tree, natural order; unit tests                                                                                              | done                      |
-| 4   | `vault/` operations: create, rename, move, duplicate, delete to Trash, restore, delete forever, undo, local purge; every change marks dirty; unit tests on fake IndexedDB | done                      |
-| 5   | `settings/` store with the defaults of 4.9 and 4.13; `workspace/` model with a list of panes                                                                              | done                      |
-| 6   | `instance/`: the one-window lock (Web Locks and BroadcastChannel)                                                                                                         | done                      |
-| 7   | `editor/setup.ts`: CodeMirror in source mode; `autosave/` save of the open note                                                                                           | done                      |
-| 8   | UI shell: welcome, sidebar and tree (keyboard, menus, drag and drop, inline rename), tab bar, status bar, Trash view, snackbar, lock and newer-data screens, window title | done                      |
-| 9   | The 5.10 list, each rule with a test                                                                                                                                      | done                      |
-| 10  | Playwright UI tests; screenshots of the shell, the tree and the welcome screen for Felipe                                                                                 | done                      |
-| 11  | Docs: ARCHITECTURE, DECISIONS, MANUAL_TESTS; gate                                                                                                                         | done; gate pending Felipe |
+| #   | Task                                                                                                                                                                      | State          |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| 1   | Dependencies (idb, CodeMirror, Fontsource, fake-indexeddb); `fonts.ts` with Inter and JetBrains Mono                                                                      | done           |
+| 2   | `store/`: IndexedDB schema of 5.3, migrations, newer-version guard, strict write transactions                                                                             | done           |
+| 3   | `vault/` pure logic: ids, name rules, paths, tree, natural order; unit tests                                                                                              | done           |
+| 4   | `vault/` operations: create, rename, move, duplicate, delete to Trash, restore, delete forever, undo, local purge; every change marks dirty; unit tests on fake IndexedDB | done           |
+| 5   | `settings/` store with the defaults of 4.9 and 4.13; `workspace/` model with a list of panes                                                                              | done           |
+| 6   | `instance/`: the one-window lock (Web Locks and BroadcastChannel)                                                                                                         | done           |
+| 7   | `editor/setup.ts`: CodeMirror in source mode; `autosave/` save of the open note                                                                                           | done           |
+| 8   | UI shell: welcome, sidebar and tree (keyboard, menus, drag and drop, inline rename), tab bar, status bar, Trash view, snackbar, lock and newer-data screens, window title | done           |
+| 9   | The 5.10 list, each rule with a test                                                                                                                                      | done           |
+| 10  | Playwright UI tests; screenshots of the shell, the tree and the welcome screen for Felipe                                                                                 | done           |
+| 11  | Docs: ARCHITECTURE, DECISIONS, MANUAL_TESTS; gate                                                                                                                         | done; accepted |
 
 ## Next
 
-- Felipe's M1 checks (`docs/MANUAL_TESTS.md`, M1) and approval of `docs/screenshots/m1/`.
-- After acceptance: tag `m1`, then M2 (saving, history, Markdown in and out).
+- M2: saving, history, and plain Markdown in and out.
 
 ## Blockers
 

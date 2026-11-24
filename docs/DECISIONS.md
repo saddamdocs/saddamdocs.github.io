@@ -263,6 +263,15 @@ show these behaviours, which follow Obsidian as I know it (PLAN 10):
   edited in the tree.
 - Closing the active tab activates its right neighbour, else its left.
 
+### Changed at the M1 gate (Felipe, 24 November 2026)
+
+- **Tree indent:** notes keep no empty chevron space, so a note's first letter lines up with the
+  chevrons of the folders beside it (asked with sketches of three layouts; Felipe chose this one).
+  Files show their icon where a folder has its chevron.
+- **Settings icon:** a cogwheel with eight teeth, drawn for Tamanduá.
+
+M1 accepted with these changes.
+
 ### Dependencies added in M1
 
 | Package                                     | Version                        | Licence    | Purpose                                      |
