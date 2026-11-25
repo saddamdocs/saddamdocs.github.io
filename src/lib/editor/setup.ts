@@ -13,7 +13,13 @@
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { commonmarkLanguage, markdown } from '@codemirror/lang-markdown';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
-import { EditorSelection, EditorState, type Extension } from '@codemirror/state';
+import {
+  Annotation,
+  EditorSelection,
+  EditorState,
+  Transaction,
+  type Extension,
+} from '@codemirror/state';
 import { EditorView, drawSelection, keymap } from '@codemirror/view';
 import { tags } from '@lezer/highlight';
 import { GFM } from '@lezer/markdown';
@@ -28,6 +34,38 @@ export interface EditorHooks {
   onPosition: (cursor: number, scroll: number) => void;
   /** Ctrl+S: save now, and from M3a sync now (PLAN 4.4, 4.12). */
   onSaveNow: () => void;
+  /** A change from another device was put into the text (word count, nothing to save). */
+  onRemote?: () => void;
+}
+
+/** Marks a transaction that puts another device's change into the editor (PLAN 6.2, 6.3). */
+export const remoteChange = Annotation.define<boolean>();
+
+/**
+ * Puts another device's text into an editor as one minimal change (PLAN 6.3, "Applying to an open
+ * note"): the common start and end are kept, so the cursor and the scroll position survive. The
+ * change is marked remote and kept out of the undo history, so Ctrl+Z never undoes it.
+ *
+ * @param view - The editor.
+ * @param text - The new text.
+ * @returns Nothing.
+ */
+export function applyRemoteText(view: EditorView, text: string): void {
+  const current = view.state.doc.toString();
+  if (current === text) return;
+  let start = 0;
+  while (start < current.length && start < text.length && current[start] === text[start])
+    start += 1;
+  let endCurrent = current.length;
+  let endText = text.length;
+  while (endCurrent > start && endText > start && current[endCurrent - 1] === text[endText - 1]) {
+    endCurrent -= 1;
+    endText -= 1;
+  }
+  view.dispatch({
+    changes: { from: start, to: endCurrent, insert: text.slice(start, endText) },
+    annotations: [remoteChange.of(true), Transaction.addToHistory.of(false)],
+  });
 }
 
 /** Highlighting of Markdown in source mode, in the theme's colours (PLAN 4.9). */
@@ -101,9 +139,13 @@ export function sourceExtensions(hooks: EditorHooks): Extension[] {
       autocapitalize: 'off',
     }),
     EditorView.updateListener.of((update) => {
-      // Every change is this device's own until M3b, which marks remote changes with an
-      // annotation and leaves them out here (PLAN 6.2, "Edits made by the app").
-      if (update.docChanged) hooks.onEdit();
+      // A change from another device is not an edit: it is saved by the sync engine itself and
+      // must not mark the note dirty (PLAN 6.2, "Edits made by the app").
+      const local = update.transactions.some(
+        (tr) => tr.docChanged && tr.annotation(remoteChange) !== true,
+      );
+      if (local) hooks.onEdit();
+      else if (update.docChanged) hooks.onRemote?.();
       if (update.selectionSet || update.docChanged) {
         hooks.onPosition(update.state.selection.main.head, update.view.scrollDOM.scrollTop);
       }

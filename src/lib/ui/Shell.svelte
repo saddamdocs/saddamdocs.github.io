@@ -57,6 +57,31 @@
     };
   });
 
+  // PLAN 5.8: catch up when the page is visible again, regains focus or comes back online;
+  // upload at once when it loses focus or is hidden; close the stream after 60 s hidden.
+  $effect(() => {
+    const engine = session.sync;
+    if (engine === null) return;
+    const resume = (): void => engine.resume();
+    const onVisibility = (): void => {
+      if (document.visibilityState === 'hidden') engine.hidden();
+      else engine.resume();
+    };
+    const onBlur = (): void => void session.saveAndSync();
+    window.addEventListener('online', resume);
+    window.addEventListener('offline', resume);
+    window.addEventListener('focus', resume);
+    window.addEventListener('blur', onBlur);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('online', resume);
+      window.removeEventListener('offline', resume);
+      window.removeEventListener('focus', resume);
+      window.removeEventListener('blur', onBlur);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  });
+
   // PLAN 5.10, "Drag and drop": a file dropped outside a drop target must not open in the page.
   // Drop targets (the tree) stop the event themselves; whatever reaches the document is refused.
   function refuseDrop(event: DragEvent): void {

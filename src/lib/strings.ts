@@ -197,7 +197,7 @@ export const transfer = {
 export const settingsText = {
   title: 'Settings',
   close: 'Close',
-  sections: { files: 'Files', data: 'Data' },
+  sections: { files: 'Files', data: 'Data', sync: 'Sync' },
   showAllFiles: 'Show all files in the tree',
   showAllFilesHint: 'Images in the vault appear in the tree and open in a viewer.',
   exportTitle: 'Export',
@@ -215,4 +215,61 @@ export const settingsText = {
   chooseFiles: 'Choose files or a .zip…',
   chooseFolder: 'Choose a folder…',
   busy: 'Working…',
+} as const;
+
+/** Texts of sync: setting up, the key, the chip and its details (PLAN 4.5). */
+export const syncText = {
+  startTitle: 'Start a new synced vault',
+  connectTitle: 'Connect to my vault',
+  deviceName: 'Name of this device',
+  passphrase: 'Passphrase',
+  passphraseAgain: 'Passphrase again',
+  passphraseAdvice:
+    'At least 12 characters; four or more random words are best. Anyone who obtains your sync key can try guesses offline, so a long passphrase matters. A forgotten passphrase cannot be recovered: keep it in your password manager.',
+  syncKey: 'Sync key',
+  syncKeyHint: '32 letters and digits. Spaces and dashes are ignored.',
+  start: 'Create the vault',
+  connect: 'Connect',
+  cancel: 'Back',
+  working: 'Working…',
+  downloading: (done: string) => `Downloading your notes… ${done}`,
+  mismatch: 'The two passphrases differ.',
+  tooShort: 'The passphrase needs at least 12 characters.',
+  badKey: 'A sync key is 32 letters and digits.',
+  problems: {
+    'no-vault': 'There is no vault under this key. Check the key.',
+    'newer-format': 'This vault was made by a newer version of Tamanduá. Reload to update.',
+    'wrong-passphrase': 'The passphrase does not open this vault.',
+    damaged: "This vault's info record is damaged.",
+  },
+  unreachable: 'The database could not be reached: ',
+  keyTitle: 'Your sync key',
+  keyAdvice:
+    'Store this key and your passphrase in your password manager now. On your other devices, choose "Connect to my vault" and enter both. A device whose storage was cleared needs both again.',
+  copy: 'Copy key',
+  copied: 'Copied',
+  done: 'I stored them',
+  show: 'Show',
+  hide: 'Hide',
+  settingsLocal:
+    'Sync is off: your notes are only on this device. Starting a synced vault creates a sync key, encrypts every note with your passphrase on this device, and uploads it.',
+  settingsConnectLater:
+    'To connect this device to an existing vault instead, a later version merges the notes already here with it.',
+  thisDevice: 'This device',
+  lastSync: (when: string | null) => (when === null ? 'Not synced yet' : `Last sync: ${when}`),
+  chip: {
+    synced: 'Synced',
+    syncing: 'Syncing…',
+    offline: (n: number) => (n === 0 ? 'Offline' : `Offline · ${String(n)} waiting`),
+    paused: 'Paused · passphrase needed',
+    problem: 'Sync problem',
+  },
+  detailsTitle: 'Sync',
+  waitingForMerge:
+    'Waiting for a merge (another device changed these while this one had changes not uploaded; merging arrives in a later version):',
+  unreadable: 'Could not be read from the database (this device keeps its copy):',
+  tooLarge: 'Too large to sync (over 4 MB of text), kept on this device:',
+  lastError: 'Last error:',
+  streamCheck: 'Change stream:',
+  pending: (n: number) => (n === 1 ? '1 change to upload' : `${String(n)} changes to upload`),
 } as const;

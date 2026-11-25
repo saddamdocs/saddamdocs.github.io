@@ -10,7 +10,12 @@
 <script lang="ts">
   import type { Session, SettingsSection } from '../app/session.svelte.ts';
   import { readFolderPick, type SourceFile } from '../transfer/importFiles.ts';
-  import { settingsText as t } from '../strings.ts';
+  import { settingsText as t, syncText as st } from '../strings.ts';
+  import { startSyncedVault } from '../app/boot.ts';
+  import { formatSyncKey } from '../sync/keys.ts';
+  import { RestFailure } from '../sync/rest.ts';
+  import KeyReveal from './KeyReveal.svelte';
+  import SyncForm from './SyncForm.svelte';
 
   interface Props {
     /** The running session. */
@@ -23,7 +28,7 @@
   let folderInput: HTMLInputElement | undefined = $state();
 
   const dateFormat = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
-  const sections: SettingsSection[] = ['files', 'data'];
+  const sections: SettingsSection[] = ['files', 'data', 'sync'];
 
   $effect(() => {
     if (dialog === undefined) return;
@@ -38,6 +43,24 @@
       .map((i) => ({ id: i.id, path: session.index.path(i.id) }))
       .sort((a, b) => a.path.localeCompare(b.path)),
   );
+
+  let showKey = $state(false);
+  let newKey: string | null = $state(null);
+
+  /** "Start a new synced vault" from Settings: the notes already here upload (PLAN 4.5). */
+  async function startHere(values: {
+    passphrase: string;
+    deviceName: string;
+  }): Promise<string | null> {
+    try {
+      const { key } = await startSyncedVault(session.vault.db, session.notices, values, session);
+      newKey = key;
+      return null;
+    } catch (error) {
+      if (error instanceof RestFailure) return st.unreachable + error.message;
+      return error instanceof Error ? error.message : String(error);
+    }
+  }
 
   async function pickedFiles(list: FileList | null): Promise<void> {
     if (list === null || list.length === 0) return;
@@ -81,7 +104,41 @@
         {/each}
       </nav>
       <section>
-        {#if session.settingsSection === 'files'}
+        {#if session.settingsSection === 'sync'}
+          {#if newKey !== null}
+            <KeyReveal syncKey={newKey} onDone={() => (newKey = null)} />
+          {:else if session.syncKey === null}
+            <p>{st.settingsLocal}</p>
+            <SyncForm mode="start" onSubmit={startHere} />
+            <p class="muted">{st.settingsConnectLater}</p>
+          {:else}
+            <h3>{st.syncKey}</h3>
+            <p class="row">
+              <code data-testid="settings-key">
+                {showKey
+                  ? formatSyncKey(session.syncKey)
+                  : '•••• •••• •••• •••• •••• •••• •••• ••••'}
+              </code>
+              <button type="button" class="secondary" onclick={() => (showKey = !showKey)}>
+                {showKey ? st.hide : st.show}
+              </button>
+              <button
+                type="button"
+                class="secondary"
+                onclick={() => void navigator.clipboard.writeText(session.syncKey ?? '')}
+              >
+                {st.copy}
+              </button>
+            </p>
+            <p class="muted">
+              {st.lastSync(
+                session.syncDetails?.lastSync == null
+                  ? null
+                  : dateFormat.format(session.syncDetails.lastSync),
+              )}
+            </p>
+          {/if}
+        {:else if session.settingsSection === 'files'}
           <label class="row">
             <input
               type="checkbox"

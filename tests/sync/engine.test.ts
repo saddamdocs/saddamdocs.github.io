@@ -308,3 +308,42 @@ describe('conflicts wait for M3b; refusals stop', () => {
     }
   });
 });
+
+describe('keys and passphrases (PLAN 4.5)', () => {
+  it('creates a vault, refuses a second one under the same key, and checks passphrases', async () => {
+    const { createVault, unlockVault, newSyncKey, readSyncKey, formatSyncKey } =
+      await import('../../src/lib/sync/keys.ts');
+    const fresh = newSyncKey();
+    expect(fresh).toMatch(/^[A-Za-z0-9]{32}$/);
+    expect(readSyncKey(formatSyncKey(fresh))).toBe(fresh);
+    expect(readSyncKey(`${fresh.slice(0, 8)}-${fresh.slice(8)}`)).toBe(fresh);
+    expect(readSyncKey('too short')).toBeNull();
+
+    const r = new Rest({ databaseUrl: EMULATOR_URL, namespace: ns, key: fresh });
+    await expect(createVault(r, 'short')).rejects.toBeInstanceOf(RangeError);
+    await createVault(r, 'quatro palavras ao acaso');
+    await expect(createVault(r, 'quatro palavras ao acaso')).rejects.toMatchObject({
+      kind: 'refused',
+    });
+    expect(await unlockVault(r, 'not the passphrase')).toEqual({ problem: 'wrong-passphrase' });
+    const unlocked = await unlockVault(r, 'quatro palavras ao acaso');
+    expect('key' in unlocked).toBe(true);
+    const nowhere = new Rest({ databaseUrl: EMULATOR_URL, namespace: ns, key: newSyncKey() });
+    expect(await unlockVault(nowhere, 'anything at all here')).toEqual({ problem: 'no-vault' });
+  });
+
+  it('a device with no notes connects and downloads the whole vault', async () => {
+    const a = await device('A');
+    const f = ok(await a.vault.createFolder('', 'Diário'));
+    for (let i = 0; i < 5; i += 1) {
+      const n = ok(await a.vault.createNote(f.id, `dia ${String(i)}`));
+      await a.vault.saveText(n.id, `texto ${String(i)}`);
+    }
+    await a.engine.syncNow();
+    const b = await device('B');
+    const seen: number[] = [];
+    await b.engine.downloadAll((done) => seen.push(done));
+    expect(await snapshot(b.vault)).toEqual(await snapshot(a.vault));
+    expect(seen.length).toBeGreaterThan(0);
+  });
+});

@@ -21,6 +21,9 @@ import { planImport, type ImportReport, type SourceFile } from '../transfer/impo
 import { zip, unzip } from '../transfer/zip.ts';
 import { exportName } from '../vault/names.ts';
 import type { EditorView } from '@codemirror/view';
+import { applyRemoteText } from '../editor/setup.ts';
+import type { ChipState, SyncDetails, SyncEngine } from '../sync/engine.ts';
+import { countWords } from '../editor/words.ts';
 import { CLEAN, type SaveState } from '../autosave/machine.ts';
 import { WORKSPACE_PROMPT_SAVE_MS, WORKSPACE_SAVE_DELAY_MS } from '../config.ts';
 import { DEFAULT_SETTINGS, type Settings } from '../settings/schema.ts';
@@ -50,8 +53,8 @@ import type { Notices, Snack } from './notices.svelte.ts';
 /** How notices write a time. */
 const TIME_FORMAT = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
 
-/** The sections of the Settings dialog. M8 adds Appearance and the rest. */
-export type SettingsSection = 'files' | 'data';
+/** The sections of the Settings dialog. M8 adds Appearance and the rest; M3c completes Sync. */
+export type SettingsSection = 'files' | 'data' | 'sync';
 
 /** A question that needs a yes before a destructive action (PLAN 4.3). */
 export interface Confirmation {
@@ -96,6 +99,14 @@ export class Session {
   /** Folder a new import lands in, chosen in Settings → Data or by "Import here". */
   importTarget = $state('');
   private snoozedUntil: number | null = null;
+  /** The sync engine, when sync is on (PLAN 4.5). */
+  sync: SyncEngine | null = null;
+  /** The sync key of this device, for Settings → Sync; null when sync is off. */
+  syncKey: string | null = $state(null);
+  /** The sync chip (PLAN 4.5). */
+  chip: ChipState = $state.raw({ kind: 'off' });
+  /** The chip's details. */
+  syncDetails: SyncDetails | null = $state.raw(null);
   /** Word count of the note in the focused pane (PLAN 4.1, status bar). */
   wordCount: number = $state(0);
   confirmation: Confirmation | null = $state(null);
@@ -630,6 +641,58 @@ export class Session {
     } catch (error) {
       this.fail('undo-import-failed', error);
     }
+  }
+
+  /**
+   * Connects a running sync engine to the interface.
+   *
+   * @param engine - The engine, started or about to start.
+   * @param key - The sync key, for Settings → Sync.
+   */
+  attachSync(engine: SyncEngine, key: string): void {
+    this.sync = engine;
+    this.syncKey = key;
+    const update = (): void => {
+      this.chip = engine.chip;
+      this.syncDetails = engine.details;
+    };
+    engine.subscribe(update);
+    update();
+  }
+
+  /**
+   * Whether a note is open in an editor now (PLAN 5.8: a change to it is caught up within 250 ms).
+   *
+   * @param itemId - The note.
+   * @returns True when its editor is mounted.
+   */
+  isOpenInEditor(itemId: string): boolean {
+    return this.focusedEditor?.itemId === itemId;
+  }
+
+  /**
+   * Puts another device's text into an open note, in place (PLAN 4.5, 6.3): the cursor, the scroll
+   * position and the undo history survive, and Ctrl+Z does not undo it.
+   *
+   * @param itemId - The note.
+   * @param text - The remote text, which the engine stores right after.
+   * @returns False when the editor holds edits not saved yet; the engine then leaves the note.
+   */
+  applyRemoteText(itemId: string, text: string): boolean {
+    const editor = this.focusedEditor;
+    if (editor === null || editor.itemId !== itemId) return true;
+    const saver = this.focusedSaver;
+    if (saver !== null && saver.current.status !== 'clean') return false;
+    applyRemoteText(editor.view, text);
+    saver?.remoteApplied();
+    this.wordCount = countWords(text);
+    return true;
+  }
+
+  /** Ctrl+S, blur, hiding: save every open note, then upload at once (PLAN 4.4, 5.8). */
+  async saveAndSync(): Promise<void> {
+    await this.saves.flushAll();
+    this.sync?.uploadNow();
   }
 
   /**

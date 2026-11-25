@@ -38,7 +38,18 @@ export class SettingsStore {
     await vault.ensureSettingsItem(
       serializeSettings({ settings: { ...DEFAULT_SETTINGS }, extra: {} }),
     );
-    return new SettingsStore(vault, parseSettings(await vault.readText(SETTINGS_ID)));
+    const store = new SettingsStore(vault, parseSettings(await vault.readText(SETTINGS_ID)));
+    // Settings travel between devices (PLAN 4.9): a remote change applies at once.
+    vault.subscribe((change) => {
+      if (change.origin === 'remote' && change.ids.includes(SETTINGS_ID)) void store.reload();
+    });
+    return store;
+  }
+
+  /** Reads the settings item again after another device changed it. */
+  private async reload(): Promise<void> {
+    this.stored = parseSettings(await this.vault.readText(SETTINGS_ID));
+    for (const listener of this.listeners) listener(this.stored.settings);
   }
 
   /** The current settings. */
