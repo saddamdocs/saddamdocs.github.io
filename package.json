@@ -26,7 +26,8 @@
     "check:origins": "node scripts/check-origins.ts",
     "check:size": "node scripts/check-size.ts",
     "icons": "node scripts/icons.ts",
-    "build:emulator": "vite build --mode emulator"
+    "build:emulator": "vite build --mode emulator",
+    "test:sync": "firebase emulators:exec --project demo-tamandua --only database \"vitest run --project sync\""
   },
   "dependencies": {
     "@codemirror/commands": "6.11.1",

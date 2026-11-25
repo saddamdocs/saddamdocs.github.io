@@ -1,9 +1,9 @@
 {
-  // Type checking for the unit tests (tests/unit/): the app's settings plus Node's types, which the
+  // Type checking for the unit and sync tests (tests/unit/, tests/sync/): the app's settings plus Node's types, which the
   // tests use to read fixtures. The app itself never sees Node's types (tsconfig.json).
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "types": ["vite/client", "vite-plugin-pwa/vanillajs", "node"]
   },
-  "include": ["src/**/*.ts", "src/**/*.svelte", "tests/unit/**/*.ts"]
+  "include": ["src/**/*.ts", "src/**/*.svelte", "tests/unit/**/*.ts", "tests/sync/**/*.ts"]
 }
