@@ -4,8 +4,7 @@ An offline-first Markdown notes web app with Obsidian-style live preview, built 
 and Windows. Notes live in the browser and sync, encrypted on the device, through Tamanduá's own
 Firebase Realtime Database.
 
-**Status:** milestone M0, a skeleton that proves the build, deploy and release path. There is
-nothing to edit yet. `PLAN.md` describes the whole app and the order it is built in.
+**Status:** in development (see `docs/PROGRESS.md`). `PLAN.md` describes the whole app and the order it is built in.
 
 | Channel | Address                         | Use it for                 |
 | ------- | ------------------------------- | -------------------------- |
@@ -14,6 +13,19 @@ nothing to edit yet. `PLAN.md` describes the whole app and the order it is built
 
 The full README (first use, devices, the sync key and passphrase, backups, export and import, the
 recovery tool, Brave settings, shortcuts) is written in milestone M11.
+
+## If everything else is lost
+
+`tools/recover.mjs` rebuilds your notes as ordinary folders of `.md` files from the encrypted copy
+in the database, with nothing but Node.js 20 or newer: no app, no browser.
+
+```bash
+node tools/recover.mjs --url <database address> --key <sync key> --out <empty folder>
+# or, from the Firebase console's "Export JSON" of /tamandua/<key>:
+node tools/recover.mjs --file vault.json --out <empty folder>
+```
+
+It asks for the passphrase on the terminal and never writes to the database.
 
 ## Development
 

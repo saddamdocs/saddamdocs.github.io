@@ -2,7 +2,7 @@
 
 A map of the modules and short guides for later changes (PLAN 10, "Comments and maintainability").
 Keep it in step with the code: a stale entry is a defect. PLAN 5 describes the target design; this
-file describes what exists now (M2).
+file describes what exists now (M3a).
 
 ## How the pieces fit
 
@@ -22,6 +22,12 @@ Export goes: `Session.exportZip` → `transfer/exportZip.ts` plans the paths and
 `transfer/zip.ts` → the zip worker → `transfer/download.ts`. Import goes the other way:
 picker → `transfer/zip.ts` (for a `.zip`) → `transfer/importFiles.ts` plans every item and the
 summary → `Vault.importItems` writes them in one transaction.
+
+Sync goes: a local change marks items dirty (`vault/records.ts`) → the vault tells the engine
+(`VaultChange`, origin `local`) → after a quiet second (at most 10 s) `SyncEngine.pump` seals the
+item (`sync/format.ts`, `sync/crypto.ts`) and sends one multi-path `PATCH` (`sync/rest.ts`) → the
+other device's stream (`sync/stream.ts`) sees `head` change → its engine catches up, opens the
+record and applies it (`Vault.applyRemote`, and `Session.applyRemoteText` for an open note).
 
 A user action goes: component → `Session` method → `Vault` operation (one strict IndexedDB
 transaction) → the vault's listeners → `Session.index` replaced → components update. Typing goes:
@@ -118,7 +124,8 @@ the next channel at `http://127.0.0.1:9000` and add it to the CSP. `vite.config.
 Add it to `ItemMeta` in `src/lib/store/schema.ts`, set it in `vault/records.ts` (`newRecord`,
 `metaOf`) and, if a local change may set it, in `ItemPatch`. If existing records need a value, add a
 migration to `store/db.ts` that fills it in without deleting anything, with a test on a fixture of
-the previous version. M3a adds the step that seals it into `meta`.
+the previous version. `sync/format.ts` seals every field of `ItemMeta` into `meta`; read it back in
+`decodeItem` (and add it to `KNOWN_META`), and teach `tools/recover.mjs` if export uses it.
 
 ### …add a database rule
 
@@ -164,7 +171,14 @@ of the next build (port 4173) or of the emulator build (port 4174). Tag it `@bra
 the Brave smoke run should include it. Assert on the tree with `expect.poll(() => treeText(page))`,
 because actions are asynchronous.
 
+### …add a new encryption format
+
+Never change format 1 in place (PLAN 5.6). Add `enc: 2` handling beside format 1 in
+`sync/format.ts` (write the new one, read both), new AAD strings in `sync/crypto.ts`, new vectors in
+a new file (keep `crypto-vectors.json`), a new fixture next to `tests/fixtures/format1/`, and the
+same reading in `tools/recover.mjs`. Ask Felipe first: it is a data-format decision (PLAN 10).
+
 ### Guides still to write
 
 Written when their modules land: a Markdown element in live preview (M4), a theme (M8), a shortcut
-(M6), a new encryption format (M3a).
+(M6).

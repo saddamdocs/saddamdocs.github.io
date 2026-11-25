@@ -113,12 +113,10 @@
             <p class="muted">{st.settingsConnectLater}</p>
           {:else}
             <h3>{st.syncKey}</h3>
-            <p class="row">
-              <code data-testid="settings-key">
-                {showKey
-                  ? formatSyncKey(session.syncKey)
-                  : '•••• •••• •••• •••• •••• •••• •••• ••••'}
-              </code>
+            <code class="key" data-testid="settings-key">
+              {showKey ? formatSyncKey(session.syncKey) : '•••• •••• •••• •••• •••• •••• •••• ••••'}
+            </code>
+            <p class="buttons">
               <button type="button" class="secondary" onclick={() => (showKey = !showKey)}>
                 {showKey ? st.hide : st.show}
               </button>
@@ -274,9 +272,23 @@
     color: var(--text);
     text-align: left;
   }
-  .tab.active,
   .tab:hover {
     background: var(--hover);
+  }
+  /* The open section: the same gold bar as the selected row of the tree (PLAN 4.9). */
+  .tab.active {
+    background: var(--hover);
+    box-shadow: inset 3px 0 0 var(--accent);
+    font-weight: 600;
+  }
+  .key {
+    display: block;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: var(--panel);
+    font-family: var(--font-mono);
+    white-space: nowrap;
+    overflow-x: auto;
   }
   section {
     flex: 1;
