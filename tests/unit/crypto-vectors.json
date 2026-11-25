@@ -1,0 +1,48 @@
+{
+  "passphrase": "tamanduá-bandeira come formigas à noite",
+  "salt": "AAECAwQFBgcICQoLDA0ODw==",
+  "iterations": 600000,
+  "key": "vaETeEoiAkg/frYqZ8zHV1Dt/9ET0UXLBOrlBrRr51A=",
+  "nonce": "oKGio6Slpqeoqaqr",
+  "id": "mi0abcde00000000test",
+  "rev": 7,
+  "cases": [
+    {
+      "field": "meta",
+      "aad": "tamandua:1:meta:mi0abcde00000000test:7",
+      "plaintext": "eyJuYW1lIjoiQcOnw6NvIiwicGFyZW50IjoiIiwiY3JlYXRlZCI6MSwidXBkYXRlZCI6MiwiZGV2aWNlIjoiTGludXggwrcgQnJhdmUifQ==",
+      "sealed": "oKGio6SlpqeoqaqrfiFtEcddym23Ce8WsZmfvzEwMULS68ueo5ACIRr+aFJIZikNF4h43kyTrAdsXJrwpwM/gysbIahPF0DEE3WT8mO3GZcsQtt9VAntgx70h24HlXwwi9OGizdYw1LwssA="
+    },
+    {
+      "field": "body",
+      "aad": "tamandua:1:body:mi0abcde00000000test:7",
+      "plaintext": "U1bwzzm8kIsrJLWiJF8hOT9XITE5Na8kv9hKIfHw8sOL83UUkvOLIEw9LgA=",
+      "text": "# Olá\n\nTexto com acentos: ação, coração.\n",
+      "sealed": "oKGio6SlpqeoqaqrVlXzv5OEeNy+bJkTVmXRpCJFYBKZuwrOPnJqIscs+eOm9Ch84VnJzyyM93dEz2nDdU4p+85GxsSdqccB"
+    },
+    {
+      "field": "blob",
+      "aad": "tamandua:1:blob:mi0abcde00000000test",
+      "plaintext": "iVBORwABAgP/",
+      "sealed": "oKGio6SlpqeoqaqrjFNNN6o56lRqZbeSBNiZw1Nt0Kh6K9hE/g=="
+    },
+    {
+      "field": "check",
+      "aad": "tamandua:1:check",
+      "plaintext": "dGFtYW5kdWEgY2hlY2sgdjE=",
+      "sealed": "oKGio6SlpqeoqaqrcWJuEcRcnTa1K0TUEVHQ6yxEmEAmS2feXA1RQXywPy24"
+    },
+    {
+      "field": "tombstone",
+      "aad": "tamandua:1:meta:mi0abcde00000000test:7",
+      "plaintext": "eyJnb25lIjp0cnVlfQ==",
+      "sealed": "oKGio6SlpqeoqaqrfiFkH8Rdym3hOlnUDwXnihSPZlL+0p0XRasGIEY="
+    },
+    {
+      "field": "moved",
+      "aad": "tamandua:1:moved",
+      "plaintext": "dGFtYW5kdWEgbW92ZWQgdjE=",
+      "sealed": "oKGio6SlpqeoqaqrcWJuEcRcnTa1JUPHF17Q6yx8GcV+CChTUAib3/fPxwey"
+    }
+  ]
+}
