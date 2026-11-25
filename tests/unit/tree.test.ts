@@ -64,7 +64,8 @@ describe('order (PLAN 4.3)', () => {
     ]);
     expect(names(index)).toEqual(['ideas']);
     expect(names(index, ['f'])).toEqual(['ideas', '  plan']);
-    expect(names(index, ['f'], true)).toEqual(['ideas', '  plan', '  map.png']);
+    // Files sort among the notes, as in Obsidian.
+    expect(names(index, ['f'], true)).toEqual(['ideas', '  map.png', '  plan']);
     expect(index.rows(new Set(), false)[0]?.hasChildren).toBe(true);
   });
 

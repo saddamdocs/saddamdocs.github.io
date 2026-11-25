@@ -4,12 +4,12 @@ Updated at the end of every session (PLAN 10, "Process").
 
 ## Status
 
-| Milestone  | State                                                                                      |
-| ---------- | ------------------------------------------------------------------------------------------ |
-| M0         | Accepted by Felipe on 20 November 2026; tagged `m0`                                        |
-| M1         | Accepted by Felipe on 24 November 2026, with the tree indent and gear changes; tagged `m1` |
-| M2         | Built; waiting for Felipe's checks                                                         |
-| M3a to M11 | Not started                                                                                |
+| Milestone  | State                                                                                                |
+| ---------- | ---------------------------------------------------------------------------------------------------- |
+| M0         | Accepted by Felipe on 20 November 2026; tagged `m0`                                                  |
+| M1         | Accepted by Felipe on 24 November 2026, with the tree indent and gear changes; tagged `m1`           |
+| M2         | Accepted by Felipe on 25 November 2026, with the tree layout of his Obsidian screenshot; tagged `m2` |
+| M3a to M11 | Not started                                                                                          |
 
 ## M0: environment, skeleton and deploy
 
@@ -53,22 +53,21 @@ Branch `m1-vault`.
 
 Branch `m2-saving-transfer`.
 
-| #   | Task                                                                                                                                     | State                     |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| 1   | Saving: controller tests with fake timers, the failure banner with Retry and "Export now", the persistent-storage request at every start | done                      |
-| 2   | Files in the vault (`Vault.addFile`, SHA-256), the image viewer tab, "Show all files"                                                    | done                      |
-| 3   | Image links (4.3): parse, look up, rewrite on move as part of the move and its Undo                                                      | done                      |
-| 4   | Local snapshots: 20 per note, idle 5 min, tab close, one per 10 min; the History view with Restore as an undoable edit                   | done                      |
-| 5   | Export: vault and folder to `.zip` in a worker, `(2)` for case clashes, the Trash under `.trash/`, "Download as .md"                     | done                      |
-| 6   | Import: folder, `.zip` or `.md` files; the rules of 4.15; summary; Undo import                                                           | done                      |
-| 7   | Export reminder banner; Settings dialog with its Data section                                                                            | done                      |
-| 8   | Fixtures of section 8 for import; R12 round-trip test; abrupt-close test                                                                 | done                      |
-| 9   | Docs and gate                                                                                                                            | done; gate pending Felipe |
+| #   | Task                                                                                                                                     | State          |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| 1   | Saving: controller tests with fake timers, the failure banner with Retry and "Export now", the persistent-storage request at every start | done           |
+| 2   | Files in the vault (`Vault.addFile`, SHA-256), the image viewer tab, "Show all files"                                                    | done           |
+| 3   | Image links (4.3): parse, look up, rewrite on move as part of the move and its Undo                                                      | done           |
+| 4   | Local snapshots: 20 per note, idle 5 min, tab close, one per 10 min; the History view with Restore as an undoable edit                   | done           |
+| 5   | Export: vault and folder to `.zip` in a worker, `(2)` for case clashes, the Trash under `.trash/`, "Download as .md"                     | done           |
+| 6   | Import: folder, `.zip` or `.md` files; the rules of 4.15; summary; Undo import                                                           | done           |
+| 7   | Export reminder banner; Settings dialog with its Data section                                                                            | done           |
+| 8   | Fixtures of section 8 for import; R12 round-trip test; abrupt-close test                                                                 | done           |
+| 9   | Docs and gate                                                                                                                            | done; accepted |
 
 ## Next
 
-- Felipe's M2 checks (`docs/MANUAL_TESTS.md`, M2).
-- After acceptance: tag `m2`, then M3a (sync, part 1: format, rules and transport).
+- M3a: sync, part 1 (format, rules and transport).
 
 ## Blockers
 

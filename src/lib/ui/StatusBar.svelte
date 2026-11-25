@@ -34,8 +34,10 @@
     <span class:failed={session.saveState.status === 'failed'} data-testid="save-state">
       {saveText}
     </span>
-    <span class="dot">·</span>
-    <span data-testid="word-count">{t.words(session.wordCount)}</span>
+    {#if session.index.get(tab.itemId)?.kind === 'note'}
+      <span class="dot">·</span>
+      <span data-testid="word-count">{t.words(session.wordCount)}</span>
+    {/if}
   {:else}
     <span class="spacer"></span>
   {/if}

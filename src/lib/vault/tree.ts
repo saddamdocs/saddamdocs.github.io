@@ -3,7 +3,7 @@
  * Trash, and the rows the sidebar shows.
  *
  * Owns `VaultIndex`, an immutable index over item records, rebuilt after every change. It never
- * writes anything. Display rules: folders first, then notes, then files, in natural
+ * writes anything. Display rules: folders first, then notes and files together, in natural
  * case-insensitive order; an item whose parent is unknown or deleted forever shows at the root;
  * a parent loop (possible only through sync, repaired in M3b) never makes the tree loop.
  *
@@ -16,8 +16,11 @@ import { exportName, nameKey } from './names.ts';
 /** Natural, case-insensitive order (PLAN 4.3): "note 2" before "note 10", "a" next to "A". */
 const collator = new Intl.Collator('en', { numeric: true, sensitivity: 'base' });
 
-/** Order of kinds in the tree: folders first, then notes, then files. */
-const KIND_ORDER: Readonly<Record<ItemKind, number>> = { folder: 0, note: 1, file: 2, settings: 3 };
+/**
+ * Order of kinds in the tree: folders first, then notes and files together in one alphabetical
+ * list, as Obsidian shows them (Felipe's screenshot at the M2 gate).
+ */
+const KIND_ORDER: Readonly<Record<ItemKind, number>> = { folder: 0, note: 1, file: 1, settings: 2 };
 
 /**
  * Compares two items for the tree.

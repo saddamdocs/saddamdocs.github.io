@@ -77,7 +77,7 @@ try {
   await shot('3-export-reminder');
 
   await page.locator('[role="treeitem"]', { hasText: 'images' }).first().click();
-  await page.locator('[role="treeitem"]', { hasText: 'img.png' }).click();
+  await page.locator('[role="treeitem"]', { hasText: 'img' }).click();
   await shot('4-image-viewer');
 
   await page.locator('[role="treeitem"]', { hasText: 'Ação e coração' }).click();

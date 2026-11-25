@@ -149,7 +149,7 @@ test('"Show all files" lists images, which open in the viewer', async ({ page })
   await page.getByTestId('show-all-files').check();
   await page.getByTestId('settings-dialog').getByRole('button', { name: 'Close' }).click();
   await treeRow(page, 'images').click();
-  await treeRow(page, 'img.png').click();
+  await treeRow(page, 'img').click();
   const image = page.getByTestId('image-viewer').locator('img');
   await expect(image).toBeVisible();
   expect(await image.evaluate((img) => (img as HTMLImageElement).naturalWidth)).toBe(16);
