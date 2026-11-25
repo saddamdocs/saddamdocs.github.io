@@ -85,7 +85,7 @@
           )}
           actions={[
             { label: noticeText.exportNow, run: () => void session.exportZip() },
-            { label: transferText.later, run: () => session.snoozeReminder() },
+            { label: transferText.later, run: () => void session.snoozeReminder() },
           ]}
         />
       {/if}

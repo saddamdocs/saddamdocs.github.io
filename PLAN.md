@@ -298,32 +298,32 @@ The editor always holds the plain Markdown text and only restyles it. Four rules
 3. **No jumping.** Revealing inline or line syntax must not change line height. Only images, tables and block math may change vertical layout.
 4. **Source mode.** Ctrl+E switches the current tab between live preview and plain highlighted source.
 
-| Element | Markdown | Cursor elsewhere | Cursor touching |
-|---|---|---|---|
-| Heading 1 to 6 | `# Title` | Larger bold text, `#` hidden | `#` shown, size unchanged |
-| Bold | `**text**`, `__text__` | Bold, markers hidden | Markers shown |
-| Italic | `*text*`, `_text_` | Italic, markers hidden | Markers shown |
-| Strikethrough | `~~text~~` | Struck through | Markers shown |
-| Highlight | `==text==` | Tinted background | Markers shown |
-| Inline code | `` `code` `` | Monospace on a tinted background | Backticks shown |
-| Link | `[text](url)` | Only `text`, styled as a link. Ctrl+click opens it. | Full source shown |
-| Bare URL | `https://...` | Styled as a link. Ctrl+click opens it. | Unchanged |
-| Image | `![alt](path)` | The image from this vault, scaled to the column width | Source line shown above the image |
-| Bullet list | `- item` | Marker drawn as a dot. Nested levels indent. Wrapped lines align with the text. | Marker character shown |
-| Numbered list | `1. item` | Number styled, kept as typed | Unchanged |
-| Task | `- [ ] todo`, `- [x] done` | Clickable checkbox. Done items dim. | `[ ]` shown |
-| Quote | `> text` | Left bar, `>` hidden | `>` shown on the cursor's line |
-| Code block | Fenced, with optional language | Monospace box with syntax colours, fences hidden, language label top right | Fences shown |
-| Horizontal rule | `---` | A thin line | Source shown |
-| Table | GFM pipe table | Rendered table with header and alignment | Raw source in monospace |
-| Inline math | `$x^2$` | Rendered by KaTeX | Source shown |
-| Block math | `$$ ... $$` | Centred formula | Source shown, formula stays visible below |
-| Footnote | `[^1]`, `[^1]: text` | Reference raised and styled | Unchanged |
-| Front matter | YAML between `---` lines at the top | Dim monospace block, never hidden | Unchanged |
-| Escape | `\*` | Backslash hidden | Backslash shown |
-| Coloured text | `<span style="color:#dc322f">text</span>` | The text in that colour, tags hidden (4.14) | Tags shown |
-| Raw HTML | `<b>x</b>` | Dim source text. Never rendered, never executed. The colour span of 4.14 is the one exception. | Unchanged |
-| Not supported | `[[link]]`, `![[embed]]`, `#tag`, `> [!note]`, `%%comment%%` | Plain text with no special behaviour | Unchanged |
+| Element         | Markdown                                                     | Cursor elsewhere                                                                               | Cursor touching                           |
+| --------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| Heading 1 to 6  | `# Title`                                                    | Larger bold text, `#` hidden                                                                   | `#` shown, size unchanged                 |
+| Bold            | `**text**`, `__text__`                                       | Bold, markers hidden                                                                           | Markers shown                             |
+| Italic          | `*text*`, `_text_`                                           | Italic, markers hidden                                                                         | Markers shown                             |
+| Strikethrough   | `~~text~~`                                                   | Struck through                                                                                 | Markers shown                             |
+| Highlight       | `==text==`                                                   | Tinted background                                                                              | Markers shown                             |
+| Inline code     | `` `code` ``                                                 | Monospace on a tinted background                                                               | Backticks shown                           |
+| Link            | `[text](url)`                                                | Only `text`, styled as a link. Ctrl+click opens it.                                            | Full source shown                         |
+| Bare URL        | `https://...`                                                | Styled as a link. Ctrl+click opens it.                                                         | Unchanged                                 |
+| Image           | `![alt](path)`                                               | The image from this vault, scaled to the column width                                          | Source line shown above the image         |
+| Bullet list     | `- item`                                                     | Marker drawn as a dot. Nested levels indent. Wrapped lines align with the text.                | Marker character shown                    |
+| Numbered list   | `1. item`                                                    | Number styled, kept as typed                                                                   | Unchanged                                 |
+| Task            | `- [ ] todo`, `- [x] done`                                   | Clickable checkbox. Done items dim.                                                            | `[ ]` shown                               |
+| Quote           | `> text`                                                     | Left bar, `>` hidden                                                                           | `>` shown on the cursor's line            |
+| Code block      | Fenced, with optional language                               | Monospace box with syntax colours, fences hidden, language label top right                     | Fences shown                              |
+| Horizontal rule | `---`                                                        | A thin line                                                                                    | Source shown                              |
+| Table           | GFM pipe table                                               | Rendered table with header and alignment                                                       | Raw source in monospace                   |
+| Inline math     | `$x^2$`                                                      | Rendered by KaTeX                                                                              | Source shown                              |
+| Block math      | `$$ ... $$`                                                  | Centred formula                                                                                | Source shown, formula stays visible below |
+| Footnote        | `[^1]`, `[^1]: text`                                         | Reference raised and styled                                                                    | Unchanged                                 |
+| Front matter    | YAML between `---` lines at the top                          | Dim monospace block, never hidden                                                              | Unchanged                                 |
+| Escape          | `\*`                                                         | Backslash hidden                                                                               | Backslash shown                           |
+| Coloured text   | `<span style="color:#dc322f">text</span>`                    | The text in that colour, tags hidden (4.14)                                                    | Tags shown                                |
+| Raw HTML        | `<b>x</b>`                                                   | Dim source text. Never rendered, never executed. The colour span of 4.14 is the one exception. | Unchanged                                 |
+| Not supported   | `[[link]]`, `![[embed]]`, `#tag`, `> [!note]`, `%%comment%%` | Plain text with no special behaviour                                                           | Unchanged                                 |
 
 **Typing behaviour**
 

@@ -99,8 +99,7 @@ The next channel has no notes yet, so it opens on the welcome screen.
       Obsidian's proportions (tree spacing, tab bar, status bar, text column). Approve the welcome
       screen, the empty shell and the tree, or say what to change (PLAN 7, M1 gate). **Felipe said:** proposed change is on the Plan file M1 gate table.
       Done: notes flush with the folders' chevrons, and a cogwheel for Settings (DECISIONS, M1).
-- [x] **F-M1-10 Sharpness.** At your 150% scaling on the 4K screen, the interface text (Inter) and the
-      note text are sharp, and the window title reads "<note> — Tamanduá (next)".
+- [x] **F-M1-10 Sharpness.** At your 150% scaling on the 4K screen, the interface text (Inter) and the note text are sharp, and the window title reads "<note> — Tamanduá (next)".
 
 ## M2: saving, history, and plain Markdown in and out
 
@@ -109,29 +108,29 @@ At NEXT_URL in the installed "Tamanduá (next)" window. Keep a small test folder
 
 ### Fedora
 
-- [ ] **F-M2-1 Abrupt close.** Type a sentence, wait a second, and close the window with the window
+- [x] **F-M2-1 Abrupt close.** Type a sentence, wait a second, and close the window with the window
       manager (or kill Brave). Reopen: the sentence is there. Brave showed no "Leave site?" prompt.
-- [ ] **F-M2-2 Import a folder.** Settings (gear) → Data → "Choose a folder…", pick your test folder.
+- [x] **F-M2-2 Import a folder.** Settings (gear) → Data → "Choose a folder…", pick your test folder.
       The summary lists what was imported and skipped. The tree shows the same nested folders. Press
       "Undo import" once to see everything go to the Trash, then import again.
-- [ ] **F-M2-3 Import a .zip and loose files.** "Choose files or a .zip…" with a `.zip` of notes, then
+- [x] **F-M2-3 Import a .zip and loose files.** "Choose files or a .zip…" with a `.zip` of notes, then
       with two loose `.md` files. Accented names arrive intact.
-- [ ] **F-M2-4 Export.** Settings → Data → Export vault: Brave saves `tamandua-YYYY-MM-DD.zip`. Open it
+- [x] **F-M2-4 Export.** Settings → Data → Export vault: Brave saves `tamandua-YYYY-MM-DD.zip`. Open it
       in Files (GNOME): the same folders and `.md` files, empty folders kept, and the notes open in a
       text editor exactly as typed. "Last exported" shows the time.
-- [ ] **F-M2-5 Folder export and one note.** Right-click a folder → Export folder; right-click a note
+- [x] **F-M2-5 Folder export and one note.** Right-click a folder → Export folder; right-click a note
       (or its tab) → Download as .md.
-- [ ] **F-M2-6 Images.** Settings → Files → "Show all files": images appear in the tree with an icon
+- [x] **F-M2-6 Images.** Settings → Files → "Show all files": images appear in the tree with an icon
       and open in the viewer. Drag a note that links to an image (`![](picture.png)`) into a folder at
       another depth: its link changes so it still points at the picture; Undo changes it back.
-- [ ] **F-M2-7 History.** Edit a note, close its tab, reopen it and edit again. Tab right-click →
+- [x] **F-M2-7 History.** Edit a note, close its tab, reopen it and edit again. Tab right-click →
       History: one entry ("tab closed"). Restore it, then Ctrl+Z brings back the newer text.
-- [ ] **F-M2-8 Reminder.** With ten or more notes and no export yet, a gold banner suggests exporting.
+- [x] **F-M2-8 Reminder.** With ten or more notes and no export yet, a gold banner suggests exporting.
       "Later" hides it until tomorrow; "Export now" downloads the archive and hides it.
-- [ ] **F-M2-9 Look.** Compare with `docs/screenshots/m2/` (Settings → Data, import summary, reminder,
+- [x] **F-M2-9 Look.** (Tree layout changed at the gate to match Obsidian's, see DECISIONS M2.) Compare with `docs/screenshots/m2/` (Settings → Data, import summary, reminder,
       image viewer, History, save-failed banner).
 
 ### Windows (at the M3c gate)
 
-- [ ] **W-M2-1 Export on Windows.** Export the vault and open the `.zip` in Explorer: accented names
+- [x] **W-M2-1 Export on Windows.** Export the vault and open the `.zip` in Explorer: accented names
       (ação, coração) are correct and every note opens in Notepad.

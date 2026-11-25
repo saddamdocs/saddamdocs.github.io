@@ -41,7 +41,13 @@ async function newVault(): Promise<Vault> {
   count += 1;
   const opened = await openVault(`transfer-${String(count)}`);
   if (opened.kind !== 'ok') throw new Error(opened.kind);
-  return Vault.load(opened.db, () => 'test');
+  // A clock that moves on with every reading, so "created later" is never a tie.
+  let tick = Date.UTC(2026, 10, 25);
+  return Vault.load(
+    opened.db,
+    () => 'test',
+    () => (tick += 1000),
+  );
 }
 
 /** Exports a vault to archive entries, the way the app does. */

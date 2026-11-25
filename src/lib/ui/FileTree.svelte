@@ -23,6 +23,19 @@
   }
   let { session }: Props = $props();
 
+  /** Left padding of a top-level row, in px. */
+  const TREE_PAD = 8;
+  /** Indent per level, in px; also the chevron's width, so guides sit under chevrons. */
+  const TREE_INDENT = 16;
+
+  /** Splits a file name for display: `map.png` → `map` and the badge `PNG`. */
+  function splitExtension(name: string): { stem: string; ext: string } {
+    const dot = name.lastIndexOf('.');
+    return dot > 0
+      ? { stem: name.slice(0, dot), ext: name.slice(dot + 1).toUpperCase() }
+      : { stem: name, ext: '' };
+  }
+
   /** The drag payload type, so drops from outside (files) are told apart. */
   const DRAG_TYPE = 'application/x-tamandua-item';
 
@@ -255,7 +268,7 @@
       data-id={item.id}
       data-kind={item.kind}
       draggable={session.renaming !== item.id}
-      style:padding-left="{8 + row.depth * 16}px"
+      style:padding-left="{TREE_PAD + row.depth * TREE_INDENT}px"
       onclick={(e) => activate(row, e.ctrlKey || e.metaKey)}
       onauxclick={(e) => {
         if (e.button === 1 && item.kind !== 'folder') session.open(item.id, true);
@@ -276,13 +289,16 @@
         if (item.kind === 'folder') onDrop(e, item.id);
       }}
     >
-      <!-- Felipe's choice at the M1 gate: notes keep no empty chevron space, so a note's first
-           letter lines up with the chevrons of the folders beside it. Files show their icon there. -->
-      {#if item.kind === 'folder'}
-        <span class="chevron" class:open={row.expanded}><Icon name="chevron" size={14} /></span>
-      {:else if item.kind === 'file'}
-        <span class="kind"><Icon name="image" size={14} /></span>
-      {/if}
+      <!-- Layout from Felipe's Obsidian screenshot at the M2 gate: a thin guide under the chevron
+           of every expanded folder above this row; notes keep the chevron's space, so names of one
+           level share one column; files show no icon. -->
+      {#each { length: row.depth } as _, level (level)}
+        <span class="guide" style:left="{TREE_PAD + level * TREE_INDENT + TREE_INDENT / 2}px"
+        ></span>
+      {/each}
+      <span class="chevron" class:open={row.expanded} class:spacer={item.kind !== 'folder'}>
+        {#if item.kind === 'folder'}<Icon name="chevron" size={14} />{/if}
+      </span>
       {#if session.renaming === item.id}
         <span class="rename-box">
           <input
@@ -299,8 +315,10 @@
           {#if renameError}<span class="error" role="alert">{renameError}</span>{/if}
         </span>
       {:else}
-        <span class="name">{item.name}</span>
+        {@const split = item.kind === 'file' ? splitExtension(item.name) : null}
+        <span class="name">{split === null ? item.name : split.stem}</span>
         {#if row.sameName}<span class="same" title={t.sameName}>≠</span>{/if}
+        {#if split !== null && split.ext !== ''}<span class="ext">{split.ext}</span>{/if}
       {/if}
     </div>
   {/each}
@@ -367,9 +385,24 @@
   .chevron.open {
     transform: rotate(90deg);
   }
-  .kind {
-    display: inline-flex;
+
+  .chevron.spacer {
+    visibility: hidden;
+  }
+  .guide {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--border);
+    pointer-events: none;
+  }
+  .ext {
+    margin-left: auto;
+    padding-left: 8px;
     color: var(--text-muted);
+    font-size: 11px;
+    letter-spacing: 0.04em;
   }
   .name {
     overflow: hidden;

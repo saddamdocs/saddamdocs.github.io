@@ -349,3 +349,17 @@ M1 accepted with these changes.
 | fflate  | 0.8.3   | MIT     | Zip and unzip for export and import (PLAN 3) | yes, in the zip worker (13 KB) |
 
 `npm audit --omit=dev`: 0 vulnerabilities.
+
+### Changed at the M2 gate (Felipe, 25 November 2026)
+
+- **Tree layout, from Felipe's Obsidian screenshot** (`docs/reference/obsidian/tree-indent-guides.png`):
+  notes keep the chevron's space again, so the names of one level share one column; a thin
+  `--border` guide runs under the chevron of every expanded folder, beside its contents; files show
+  their name without the extension and a muted extension badge (PNG, JPG) on the right, with no
+  icon; files sort among the notes. This replaces the M1 gate's "notes flush with chevrons", which
+  came from my misleading sketches.
+- **Images inside notes** are not drawn in M2: source mode shows `![](picture.png)` as text. Image
+  widgets are M5 (PLAN 7, "Live preview, blocks and images"); M2 covers the files, the viewer and the
+  link rules, which Felipe confirmed work.
+- The status bar shows the word count for notes only.
+- M2 accepted with these changes.
