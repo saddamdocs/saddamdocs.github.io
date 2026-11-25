@@ -77,7 +77,8 @@
             idleTimer = setTimeout(() => snapshot('idle'), SNAPSHOT_IDLE_MS);
           },
           onBlur: () => newSaver.flush(),
-          onSaveNow: () => newSaver.flush(),
+          // PLAN 4.4: Ctrl+S saves now and asks sync to upload now.
+          onSaveNow: () => void session.saveAndSync(),
           onPosition: (c, s) => session.rememberPosition(tabId, c, s),
         });
         session.focusedEditor = { itemId, view };

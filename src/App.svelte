@@ -10,14 +10,16 @@
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { boot, startLocalVault } from './lib/app/boot.ts';
+  import { boot, connectVault, startLocalVault, startSyncedVault } from './lib/app/boot.ts';
+  import { RestFailure } from './lib/sync/rest.ts';
+  import KeyReveal from './lib/ui/KeyReveal.svelte';
   import { Notices } from './lib/app/notices.svelte.ts';
   import type { Session } from './lib/app/session.svelte.ts';
   import { IS_NEXT_BUILD } from './lib/channel.ts';
   import { InstanceLock } from './lib/instance/lock.ts';
   import type { VaultDb } from './lib/store/db.ts';
   import { logEvent } from './lib/store/log.ts';
-  import { screens as t, updates as u } from './lib/strings.ts';
+  import { screens as t, screens, syncText, updates as u } from './lib/strings.ts';
   import { startUpdates } from './lib/updates.ts';
   import Screen from './lib/ui/Screen.svelte';
   import Shell from './lib/ui/Shell.svelte';
@@ -29,6 +31,7 @@
     | { kind: 'elsewhere'; heldBefore: boolean }
     | { kind: 'welcome'; db: VaultDb }
     | { kind: 'ready'; session: Session }
+    | { kind: 'key'; session: Session; key: string }
     | { kind: 'newer' }
     | { kind: 'unavailable'; error: string };
 
@@ -59,6 +62,50 @@
     // A page that held the lock before has stale state in memory: start afresh from storage.
     if (heldBefore) location.reload();
     else await start();
+  }
+
+  /** What the sync forms hand over. */
+  type SyncValues = { key: string; passphrase: string; deviceName: string };
+
+  let connectProgress = $state('');
+
+  /** A failure of a sync flow, as a sentence for the form. */
+  function flowError(error: unknown): string {
+    if (error instanceof RestFailure) return syncText.unreachable + error.message;
+    return error instanceof Error ? error.message : String(error);
+  }
+
+  /** "Start a new synced vault" from the welcome screen (PLAN 4.5). */
+  async function chooseStart(
+    db: VaultDb,
+    values: { passphrase: string; deviceName: string },
+  ): Promise<string | null> {
+    try {
+      const { session, key } = await startSyncedVault(db, notices, values);
+      phase = { kind: 'key', session, key };
+      return null;
+    } catch (error) {
+      return flowError(error);
+    }
+  }
+
+  /** "Connect to my vault" from the welcome screen (PLAN 4.5). */
+  async function chooseConnect(
+    db: VaultDb,
+    values: { key: string; passphrase: string; deviceName: string },
+  ): Promise<string | null> {
+    try {
+      const result = await connectVault(db, notices, values.key, values, (done) => {
+        connectProgress = syncText.downloading(`${(done / 1024).toFixed(0)} KB`);
+      });
+      if ('problem' in result) return syncText.problems[result.problem];
+      phase = { kind: 'ready', session: result };
+      return null;
+    } catch (error) {
+      return flowError(error);
+    } finally {
+      connectProgress = '';
+    }
   }
 
   async function chooseLocal(db: VaultDb): Promise<void> {
@@ -122,7 +169,17 @@
   />
 {:else if phase.kind === 'welcome'}
   {@const db = phase.db}
-  <Welcome onLocal={() => void chooseLocal(db)} />
+  <Welcome
+    onLocal={() => void chooseLocal(db)}
+    onStart={(values: SyncValues) => chooseStart(db, values)}
+    onConnect={(values: SyncValues) => chooseConnect(db, values)}
+    progress={connectProgress}
+  />
+{:else if phase.kind === 'key'}
+  {@const ready = phase.session}
+  <Screen title={screens.welcomeTitle}>
+    <KeyReveal syncKey={phase.key} onDone={() => (phase = { kind: 'ready', session: ready })} />
+  </Screen>
 {:else if phase.kind === 'ready'}
   <Shell session={phase.session} />
 {:else if phase.kind === 'newer'}

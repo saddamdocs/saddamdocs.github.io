@@ -76,6 +76,14 @@ export class NoteSaver {
     await new Promise<void>((resolve) => this.idleWaiters.push(resolve));
   }
 
+  /**
+   * Sync put a remote version into the editor and stores it itself: nothing is pending any more
+   * (PLAN 6.2, last row of the table).
+   */
+  remoteApplied(): void {
+    this.dispatch({ type: 'remote-applied' });
+  }
+
   /** Stops the timers. Call after `flushAndWait` when the note closes. */
   dispose(): void {
     clearTimeout(this.timer);

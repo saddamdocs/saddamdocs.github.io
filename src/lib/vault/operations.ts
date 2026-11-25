@@ -17,12 +17,12 @@
 import type { VaultDb } from '../store/db.ts';
 import { writeTx } from '../store/db.ts';
 import { MAX_FILE_BYTES, SNAPSHOT_LIMIT, SNAPSHOT_MIN_INTERVAL_MS } from '../config.ts';
-import type { ItemRecord, SnapshotRecord, TextRecord } from '../store/schema.ts';
+import type { ItemMeta, ItemRecord, SnapshotRecord, TextRecord } from '../store/schema.ts';
 import { SETTINGS_ID } from '../store/schema.ts';
 import { newId } from './ids.ts';
 import { freeName, normalizeName, suffixedName, validateName, type NameProblem } from './names.ts';
 import { rewriteLinksForMove } from './links.ts';
-import { changed, newRecord, utf8Size } from './records.ts';
+import { changed, metaOf, newRecord, utf8Size } from './records.ts';
 import { VaultIndex } from './tree.ts';
 
 /** Why an operation was refused. */
@@ -52,6 +52,26 @@ export interface ImportItem {
   readonly mime?: string;
 }
 
+/** What changed in the vault, for its listeners. */
+export interface VaultChange {
+  /** The items written or removed. */
+  readonly ids: readonly string[];
+  /**
+   * `local`: a change made on this device, which marks items dirty. `remote`: a record from the
+   * database was applied. `sync`: only sync bookkeeping changed (an upload finished).
+   */
+  readonly origin: 'local' | 'remote' | 'sync';
+}
+
+/** An item as an upload reads it (PLAN 6.3, "Push" step 1). */
+export interface UploadSource {
+  readonly item: ItemRecord;
+  /** The text of a note or of the settings item, else null. */
+  readonly text: string | null;
+  /** A file's bytes, read for its first upload only; else null. */
+  readonly bytes: Uint8Array<ArrayBuffer> | null;
+}
+
 /** Milliseconds in a day. */
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -59,7 +79,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export class Vault {
   private items: Map<string, ItemRecord>;
   private idx: VaultIndex;
-  private readonly listeners = new Set<() => void>();
+  private readonly listeners = new Set<(change: VaultChange) => void>();
   private queue: Promise<unknown> = Promise.resolve();
 
   /**
@@ -107,7 +127,7 @@ export class Vault {
    * @param listener - Called with no arguments.
    * @returns A function that stops the calls.
    */
-  subscribe(listener: () => void): () => void {
+  subscribe(listener: (change: VaultChange) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   }
@@ -127,6 +147,7 @@ export class Vault {
    * @param remove - Ids whose item, text, file and snapshots are removed entirely.
    * @param dropContent - Ids whose text, file and snapshots are removed but whose item stays.
    * @param newFiles - File bytes to store.
+   * @param origin - Who made the change, for the listeners.
    */
   private async commit(
     put: readonly ItemRecord[],
@@ -134,6 +155,7 @@ export class Vault {
     remove: readonly string[] = [],
     dropContent: readonly string[] = [],
     newFiles: readonly { id: string; blob: Blob }[] = [],
+    origin: VaultChange['origin'] = 'local',
   ): Promise<void> {
     const tx = writeTx(this.db, ['items', 'texts', 'files', 'snapshots']);
     const items = tx.objectStore('items');
@@ -154,7 +176,18 @@ export class Vault {
     for (const record of put) this.items.set(record.id, record);
     for (const id of remove) this.items.delete(id);
     this.idx = new VaultIndex(this.items.values());
-    for (const listener of this.listeners) listener();
+    const change: VaultChange = {
+      ids: [
+        ...new Set([
+          ...put.map((r) => r.id),
+          ...texts.map((t) => t.id),
+          ...remove,
+          ...newFiles.map((f) => f.id),
+        ]),
+      ],
+      origin,
+    };
+    for (const listener of this.listeners) listener(change);
   }
 
   /** The live children of a folder, as the name rules need them. */
@@ -668,6 +701,140 @@ export class Vault {
       }
       await this.commit(records, texts, [], [], files);
       return ids;
+    });
+  }
+
+  /**
+   * The items with changes not yet uploaded (PLAN 5.3, `dirty`).
+   *
+   * @returns The records, in no particular order.
+   */
+  dirtyItems(): ItemRecord[] {
+    return [...this.items.values()].filter((i) => i.dirty);
+  }
+
+  /**
+   * Reads an item, its text and, for a file never uploaded, its bytes, in one transaction
+   * (PLAN 6.3, "Push" step 1).
+   *
+   * @param id - The item.
+   * @returns What to upload, or null when the item no longer exists.
+   */
+  readForUpload(id: string): Promise<UploadSource | null> {
+    return this.run(async () => {
+      const item = this.items.get(id);
+      if (item === undefined) return null;
+      const tx = this.db.transaction(['texts', 'files'], 'readonly');
+      const [text, file] = await Promise.all([
+        item.kind === 'note' || item.kind === 'settings'
+          ? tx.objectStore('texts').get(id)
+          : undefined,
+        item.kind === 'file' && item.rev === 0 ? tx.objectStore('files').get(id) : undefined,
+        tx.done,
+      ]);
+      const bytes = file === undefined ? null : new Uint8Array(await file.blob.arrayBuffer());
+      return { item, text: text?.text ?? null, bytes };
+    });
+  }
+
+  /**
+   * Records a finished upload (PLAN 6.3, "Push" step 4). When the item did not change during the
+   * upload it becomes clean; otherwise it stays dirty, and what was uploaded becomes its base.
+   *
+   * @param id - The item.
+   * @param rev - The revision just written.
+   * @param seq - The item's `seq` when it was read for the upload.
+   * @param uploaded - What was uploaded: the record as read, and its text.
+   * @returns Resolves when stored.
+   */
+  markUploaded(id: string, rev: number, seq: number, uploaded: UploadSource): Promise<void> {
+    return this.run(async () => {
+      const current = this.items.get(id);
+      if (current === undefined) return;
+      const same = current.seq === seq;
+      const record: ItemRecord = same
+        ? { ...current, rev, dirty: false, dirtySince: null, base: null }
+        : { ...current, rev, base: metaOf(uploaded.item) };
+      const texts: TextRecord[] = [];
+      if (uploaded.text !== null) {
+        const stored = await this.db.get('texts', id);
+        if (stored !== undefined) texts.push({ ...stored, baseText: same ? null : uploaded.text });
+      }
+      await this.commit([record], texts, [], [], [], 'sync');
+    });
+  }
+
+  /**
+   * Applies a record from the database to an item that has no local changes (PLAN 6.3, "Pull"
+   * steps 3 and 4), or creates it. Never marks anything dirty.
+   *
+   * @param id - The item.
+   * @param kind - Its kind.
+   * @param rev - The record's revision.
+   * @param ts - The record's database time.
+   * @param meta - The opened metadata.
+   * @param text - The opened text, for notes and the settings item.
+   * @param size - The plaintext size.
+   * @returns Resolves when stored.
+   */
+  applyRemote(
+    id: string,
+    kind: ItemRecord['kind'],
+    rev: number,
+    ts: number,
+    meta: ItemMeta,
+    text: string | null,
+    size: number,
+  ): Promise<void> {
+    return this.run(async () => {
+      const current = this.items.get(id);
+      const record: ItemRecord = {
+        ...(current ?? { id, seq: 0, gone: false }),
+        ...meta,
+        id,
+        kind,
+        size,
+        gone: false,
+        rev,
+        ts,
+        dirty: false,
+        dirtySince: null,
+        base: null,
+        unreadable: false,
+      };
+      const texts: TextRecord[] = text === null ? [] : [{ id, text, baseText: null }];
+      await this.commit([record], texts, [], [], [], 'remote');
+    });
+  }
+
+  /**
+   * Stores a file's bytes that arrived from the database.
+   *
+   * @param id - The file.
+   * @param blob - The bytes, with the file's type.
+   * @returns Resolves when stored.
+   */
+  putFileBytes(id: string, blob: Blob): Promise<void> {
+    return this.run(async () => {
+      const current = this.items.get(id);
+      if (current === undefined) return;
+      await this.commit([current], [], [], [], [{ id, blob }], 'remote');
+    });
+  }
+
+  /**
+   * Records the database time of the revision this device already has (PLAN 6.3, "Pull" step 1:
+   * an upload with `print=silent` does not return it), or marks an item unreadable.
+   *
+   * @param id - The item.
+   * @param patch - `ts`, `unreadable`, or both.
+   * @returns Resolves when stored.
+   */
+  setSyncFields(id: string, patch: Partial<Pick<ItemRecord, 'ts' | 'unreadable'>>): Promise<void> {
+    return this.run(async () => {
+      const current = this.items.get(id);
+      if (current === undefined) return;
+      await this.commit([{ ...current, ...patch }], [], [], [], [], 'sync');
     });
   }
 }

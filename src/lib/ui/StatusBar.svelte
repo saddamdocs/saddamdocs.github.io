@@ -10,6 +10,7 @@
   import type { Session } from '../app/session.svelte.ts';
   import { status as t } from '../strings.ts';
   import { activeTab } from '../workspace/model.ts';
+  import SyncChip from './SyncChip.svelte';
 
   interface Props {
     /** The running session. */
@@ -34,12 +35,15 @@
     <span class:failed={session.saveState.status === 'failed'} data-testid="save-state">
       {saveText}
     </span>
+    <span class="dot">·</span>
+    <SyncChip {session} />
     {#if session.index.get(tab.itemId)?.kind === 'note'}
       <span class="dot">·</span>
       <span data-testid="word-count">{t.words(session.wordCount)}</span>
     {/if}
   {:else}
     <span class="spacer"></span>
+    <SyncChip {session} />
   {/if}
 </footer>
 

@@ -18,6 +18,16 @@ import { SettingsStore } from '../settings/store.ts';
 import { openVault, writeTx, type VaultDb } from '../store/db.ts';
 import { logEvent } from '../store/log.ts';
 import { requestPersistence } from '../store/persist.ts';
+import { readNumber, writeState } from '../store/state.ts';
+import { SyncEngine } from '../sync/engine.ts';
+import {
+  createVault,
+  newSyncKey,
+  unlockVault,
+  type Unlocked,
+  type UnlockProblem,
+} from '../sync/keys.ts';
+import { Rest, channelEndpoint } from '../sync/rest.ts';
 import { SCHEMA_VERSION } from '../config.ts';
 import { newId } from '../vault/ids.ts';
 import { Vault } from '../vault/operations.ts';
@@ -32,8 +42,8 @@ export type BootResult =
   | { readonly kind: 'newer' }
   | { readonly kind: 'unavailable'; readonly error: string };
 
-/** How this device uses its vault (`state.vaultMode`). M3a adds `synced`. */
-export type VaultMode = 'local';
+/** How this device uses its vault (`state.vaultMode`, PLAN 4.5). */
+export type VaultMode = 'local' | 'synced';
 
 /**
  * Opens the database and, if this device already has a vault, the session.
@@ -106,7 +116,138 @@ async function startSession(db: VaultDb, notices: Notices): Promise<Session> {
   purge();
   setInterval(purge, PURGE_INTERVAL_MS);
   await session.loadExportState();
+  if ((await db.get('state', 'vaultMode'))?.value === 'synced') await attachSync(session, db, true);
   // PLAN 4.16: at every start until granted. Never awaited: start-up does not wait for it.
   void requestPersistence(db).then((state) => (session.persistState = state));
+  return session;
+}
+
+/**
+ * Starts the sync engine of a synced vault (PLAN 6.3): reads the key, the salt, the derived key
+ * and the cursor of this device, and connects the engine to the session.
+ *
+ * @param session - The running session.
+ * @param db - The open database.
+ * @param start - Start at once (catch up and upload); false when the caller downloads first.
+ * @returns The engine, or null when this device has no derived key (the passphrase was forgotten
+ *   on this device, PLAN 4.5: sync pauses until it is typed again, from M3c).
+ */
+export async function attachSync(
+  session: Session,
+  db: VaultDb,
+  start: boolean,
+): Promise<SyncEngine | null> {
+  const key = (await db.get('state', 'key'))?.value;
+  const salt = (await db.get('state', 'salt'))?.value;
+  if (typeof key !== 'string' || typeof salt !== 'string') return null;
+  const stored = await db.get('keys', salt);
+  if (stored === undefined) {
+    session.chip = { kind: 'paused' };
+    return null;
+  }
+  const cursor = await readNumber(db, 'cursor');
+  const engine = new SyncEngine(
+    session.vault,
+    new Rest(channelEndpoint(key)),
+    stored.key,
+    {
+      isOpen: (id) => session.isOpenInEditor(id),
+      applyToEditor: (id, text) => session.applyRemoteText(id, text),
+      saveCursor: (value) => writeState(db, 'cursor', value),
+    },
+    cursor ?? 0,
+  );
+  session.attachSync(engine, key);
+  if (start) engine.start();
+  return engine;
+}
+
+/** Stores what a synced device keeps (PLAN 5.3, 5.4): key, salt, derived key, mode, name. */
+async function storeSyncState(
+  db: VaultDb,
+  key: string,
+  unlocked: Unlocked,
+  deviceName: string,
+): Promise<void> {
+  const tx = writeTx(db, ['state', 'keys']);
+  const state = tx.objectStore('state');
+  const existingId = await state.get('deviceId');
+  await Promise.all([
+    existingId === undefined ? state.put({ name: 'deviceId', value: newId() }) : Promise.resolve(),
+    state.put({ name: 'deviceName', value: deviceName }),
+    state.put({ name: 'schemaVersion', value: SCHEMA_VERSION }),
+    state.put({ name: 'key', value: key }),
+    state.put({ name: 'salt', value: unlocked.salt }),
+    state.put({ name: 'cursor', value: 0 }),
+    state.put({ name: 'vaultMode', value: 'synced' satisfies VaultMode }),
+    tx.objectStore('keys').put({ salt: unlocked.salt, key: unlocked.key }),
+    tx.done,
+  ]);
+}
+
+/** The choices of the sync forms. */
+export interface SyncChoice {
+  readonly deviceName: string;
+  readonly passphrase: string;
+}
+
+/**
+ * "Start a new synced vault" (PLAN 4.5): makes a key, writes `info`, and uploads every note
+ * already on this device. Works from the welcome screen (no session yet) and from Settings → Sync
+ * (a local vault already open).
+ *
+ * @param db - The open database.
+ * @param notices - The snackbar.
+ * @param choice - Device name and passphrase.
+ * @param session - The running session, when starting from Settings.
+ * @returns The session and the new key, to show with Copy.
+ * @throws RangeError for a short passphrase; RestFailure when the database cannot be reached.
+ */
+export async function startSyncedVault(
+  db: VaultDb,
+  notices: Notices,
+  choice: SyncChoice,
+  session?: Session,
+): Promise<{ session: Session; key: string }> {
+  const key = newSyncKey();
+  const unlocked = await createVault(new Rest(channelEndpoint(key)), choice.passphrase);
+  await storeSyncState(db, key, unlocked, choice.deviceName);
+  await logEvent(db, 'info', 'vault-created', 'synced');
+  if (session !== undefined) {
+    await attachSync(session, db, true);
+    return { session, key };
+  }
+  // startSession attaches and starts the engine, because the mode is now `synced`.
+  return { session: await startSession(db, notices), key };
+}
+
+/**
+ * "Connect to my vault" for a device with no notes of its own (PLAN 4.5; M3c adds devices that
+ * have notes): checks the passphrase against `info` first, then downloads the vault with progress.
+ *
+ * @param db - The open database.
+ * @param notices - The snackbar.
+ * @param key - The sync key, as read by `readSyncKey`.
+ * @param choice - Device name and passphrase.
+ * @param progress - Bytes downloaded so far, and the total when known.
+ * @returns The running session, or why the vault could not be opened.
+ * @throws RestFailure when the database cannot be reached.
+ */
+export async function connectVault(
+  db: VaultDb,
+  notices: Notices,
+  key: string,
+  choice: SyncChoice,
+  progress: (done: number, total: number | null) => void,
+): Promise<Session | { problem: UnlockProblem }> {
+  const unlocked = await unlockVault(new Rest(channelEndpoint(key)), choice.passphrase);
+  if ('problem' in unlocked) return unlocked;
+  await storeSyncState(db, key, unlocked, choice.deviceName);
+  await writeState(db, 'vaultMode', 'local' satisfies VaultMode);
+  const session = await startSession(db, notices);
+  await writeState(db, 'vaultMode', 'synced' satisfies VaultMode);
+  const engine = await attachSync(session, db, false);
+  await engine?.downloadAll(progress);
+  engine?.start();
   return session;
 }

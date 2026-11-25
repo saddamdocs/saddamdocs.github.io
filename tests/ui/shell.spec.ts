@@ -21,12 +21,12 @@ async function waitForServiceWorker(page: Page): Promise<void> {
     .toBe(true);
 }
 
-test('a first launch shows the welcome screen with one choice enabled @brave', async ({ page }) => {
+test('a first launch shows the welcome screen with its three choices @brave', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveTitle('Tamanduá (next)');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Tamanduá');
-  await expect(page.getByRole('button', { name: 'Start a new synced vault' })).toBeDisabled();
-  await expect(page.getByRole('button', { name: 'Connect to my vault' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Start a new synced vault' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Connect to my vault' })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Use only on this device for now' })).toBeEnabled();
   await expect(page.locator('#splash')).toHaveCount(0);
 });

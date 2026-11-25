@@ -113,7 +113,7 @@ export default ts.config(
   },
   {
     // Plain JavaScript config files are not part of a TypeScript project.
-    files: ['**/*.js'],
+    files: ['**/*.js', '**/*.mjs'],
     ...ts.configs.disableTypeChecked,
   },
 );

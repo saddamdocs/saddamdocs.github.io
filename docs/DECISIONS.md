@@ -363,3 +363,53 @@ M1 accepted with these changes.
   link rules, which Felipe confirmed work.
 - The status bar shows the word count for notes only.
 - M2 accepted with these changes.
+
+## M3a: sync, part 1 (format, rules and transport)
+
+### Decisions
+
+1. **Test vectors** (`tests/unit/crypto-vectors.json`) pin the derived key and the seal of fixed
+   bytes for every AAD of PLAN 5.6. The derived key was checked independently with Python's
+   `hashlib.pbkdf2_hmac`, and the body's compressed bytes with Python's `zlib`. AES-GCM was not
+   cross-checked in Python (the `cryptography` package is not installed and I did not install it);
+   `tools/recover.mjs`, written separately from the spec, opens the app's seals in tests instead.
+   Compressors may differ, so the body vector pins one compressed form and checks it inflates back.
+2. **Remote records meet local edits (until M3b):** the record is not applied and the item is
+   listed "waiting for a merge"; it is neither pulled nor pushed again until M3b. One case is settled
+   at once: when the record's name, place, deletion state and text equal the local copy, it is the
+   upload of a page that closed before its local commit, and it is adopted (no duplicate).
+3. **Remote changes to an open note** go into the editor only when it holds no unsaved edits; the
+   change is one minimal transaction (common start and end kept), annotated as remote and with
+   `addToHistory: false`. An open note with unsaved edits waits like a dirty one.
+4. **Tombstones are written** (deleting forever an item that was uploaded) but not yet applied when
+   they arrive; M3b applies them by the merge table. Until then they wait like a conflict.
+5. **Uploads run one at a time** in the order of PLAN 5.8; downloads of blobs run two at a time.
+   The REST client still allows four requests in flight for the later parallel work.
+6. **The online check** treats only an explicit `navigator.onLine === false` as offline: Node.js
+   has a `navigator` without `onLine`.
+7. **Settings → Sync in M3a** offers "Start a new synced vault" for a vault already on the device
+   (PLAN 4.5: it uploads every note already there), so Felipe's existing next profile can sync.
+   "Connect to my vault" stays on the welcome screen (a device with no notes) until M3c's reconcile.
+8. **The sync form** puts the key in an `autocomplete="username"` field and the passphrase in a
+   password field, so a password manager can store both together (PLAN 5.9 rule 5).
+9. **The recovery tool reads the vault in parts** (`info`, `moved`, `items`, then each blob): the
+   rules of Appendix B grant reads on those children, not on `/tamandua/<key>` as a whole. Found by
+   the emulator test; `--file` takes the console's export of the node as it is.
+10. **The format-1 fixture** (`tests/fixtures/format1/`) is sealed by the app's code with the test
+    passphrase "test passphrase for the format 1 fixture"; its expected tree comes from the app's
+    export planner, so the recovery test compares two implementations. Never regenerate it to make a
+    test pass (PLAN 8).
+11. **Scripts that import the sync modules** run with `node --experimental-transform-types`
+    (constructor parameter properties need more than type stripping) and are type-checked by
+    `tsconfig.test.json`.
+12. **The probe test restores the emulator's rules** after locking its default namespace, because the
+    browser sync tests use that namespace.
+13. **`database.rules.json` is unchanged from Appendix B.** Every rule now has an allowed and a
+    refused test (27 rules tests).
+
+### Not verified (for the M3a gate)
+
+- The stream against the real `NEXT_DB`: Firebase may redirect an `EventSource` to another server;
+  the CSP allows any `*.firebasedatabase.app` host, but only Felipe's test shows the real behaviour.
+- In a Settings screenshot the first section button looked tinted after typing elsewhere; the
+  computed style in tests is transparent. Cosmetic; noted for M8, which rebuilds Settings.

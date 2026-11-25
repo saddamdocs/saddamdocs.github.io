@@ -199,3 +199,79 @@ describe('blobs: created and removed, never overwritten', () => {
     expect((await rest('PUT', `${base}/blobs/${randomId()}`, { a: 1 }, as)).status).toBe(401);
   });
 });
+
+describe('limits and types of every field (Appendix B)', () => {
+  it('info: salt at most 64, check at most 512 characters', async () => {
+    const vault = `/tamandua/${randomKey()}`;
+    const info = { format: 1, salt: 'c2FsdA==', check: SEALED, created: SV };
+    expect((await rest('PUT', `${vault}/info`, { ...info, salt: 's'.repeat(65) }, as)).status).toBe(
+      401,
+    );
+    expect(
+      (await rest('PUT', `${vault}/info`, { ...info, check: 'c'.repeat(513) }, as)).status,
+    ).toBe(401);
+    expect(
+      (
+        await rest(
+          'PUT',
+          `${vault}/info`,
+          { ...info, salt: 's'.repeat(64), check: 'c'.repeat(512) },
+          as,
+        )
+      ).status,
+    ).toBe(200);
+  });
+
+  it('moved: check at most 512 characters, no other field', async () => {
+    const vault = `/tamandua/${randomKey()}`;
+    expect(
+      (await rest('PUT', `${vault}/moved`, { ts: SV, check: 'c'.repeat(513) }, as)).status,
+    ).toBe(401);
+    expect((await rest('PUT', `${vault}/moved`, { ts: SV, check: SEALED, x: 1 }, as)).status).toBe(
+      401,
+    );
+    expect((await rest('GET', `/tamandua/${randomKey(31)}/moved`, undefined, as)).status).toBe(401);
+  });
+
+  it('head: id a string of at most 40, rev a number', async () => {
+    expect(
+      (await rest('PUT', `${base}/head`, { ts: SV, id: 'i'.repeat(41), rev: 1 }, as)).status,
+    ).toBe(401);
+    expect((await rest('PUT', `${base}/head`, { ts: SV, id: 5, rev: 1 }, as)).status).toBe(401);
+    expect(
+      (await rest('PUT', `${base}/head`, { ts: SV, id: randomId(), rev: '1' }, as)).status,
+    ).toBe(401);
+  });
+
+  it('items: meta at most 8,192, body at most 7,000,000, size 0 to 7,000,000', async () => {
+    const path = (): string => `${base}/items/${randomId()}`;
+    expect((await rest('PUT', path(), item(1, { meta: 'm'.repeat(8193) }), as)).status).toBe(401);
+    expect((await rest('PUT', path(), item(1, { meta: 'm'.repeat(8192) }), as)).status).toBe(200);
+    expect((await rest('PUT', path(), item(1, { size: -1 }), as)).status).toBe(401);
+    expect((await rest('PUT', path(), item(1, { size: 7_000_001 }), as)).status).toBe(401);
+    expect((await rest('PUT', path(), item(1, { size: 'big' }), as)).status).toBe(401);
+    expect((await rest('PUT', path(), item(1, { body: 'b'.repeat(7_000_001) }), as)).status).toBe(
+      401,
+    );
+    expect((await rest('PUT', path(), item(1, { meta: 5 }), as)).status).toBe(401);
+  });
+
+  it('items: a 16-character id is the shortest allowed', async () => {
+    expect((await rest('PUT', `${base}/items/${'a'.repeat(15)}`, item(1), as)).status).toBe(401);
+    expect((await rest('PUT', `${base}/items/${'a'.repeat(16)}`, item(1), as)).status).toBe(200);
+  });
+
+  it('blobs: at most 9,500,000 characters, readable only under a long key', async () => {
+    expect(
+      (await rest('PUT', `${base}/blobs/${randomId()}`, 'b'.repeat(9_500_001), as)).status,
+    ).toBe(401);
+    const id = randomId();
+    expect((await rest('PUT', `${base}/blobs/${id}`, SEALED, as)).status).toBe(200);
+    expect(
+      (await rest('GET', `/tamandua/${randomKey(31)}/blobs/${id}`, undefined, as)).status,
+    ).toBe(401);
+    expect(
+      (await rest('PUT', `/tamandua/${randomKey(31)}/blobs/${randomId()}`, SEALED, as)).status,
+    ).toBe(401);
+  });
+});

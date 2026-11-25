@@ -3,7 +3,7 @@
  * - `unit`: pure logic, no browser and no emulator (`npm run test:unit`).
  * - `rules`: REST requests to the Realtime Database emulator, which `npm run test:rules` starts
  *   through `firebase emulators:exec` with the `demo-tamandua` project.
- * M3 adds `sync` and `sim`.
+ * - `sync`: the sync engine against the emulator (`npm run test:sync`). M3b adds `sim`.
  *
  * Talks to: nothing; read by Vitest.
  */
@@ -18,6 +18,14 @@ export default defineConfig({
           name: 'unit',
           include: ['tests/unit/**/*.test.ts'],
           environment: 'node',
+        },
+      },
+      {
+        test: {
+          name: 'sync',
+          include: ['tests/sync/**/*.test.ts'],
+          environment: 'node',
+          testTimeout: 30_000,
         },
       },
       {

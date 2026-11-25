@@ -160,8 +160,13 @@ test.describe('spike D: browser to emulator', () => {
   test('the probe button reports PASS against a locked database', async ({ page }) => {
     // The emulator build's probe talks to the default namespace. Lock it like a new database.
     await loadRules('demo-tamandua-default-rtdb', LOCKED_RULES);
-    await page.goto(`${APP}?probe`);
-    await page.getByRole('button', { name: 'Send the probe request' }).click();
-    await expect(page.getByTestId('db-result')).toHaveText(/^PASS/);
+    try {
+      await page.goto(`${APP}?probe`);
+      await page.getByRole('button', { name: 'Send the probe request' }).click();
+      await expect(page.getByTestId('db-result')).toHaveText(/^PASS/);
+    } finally {
+      // The sync tests use this namespace with the real rules.
+      await loadRules('demo-tamandua-default-rtdb', RULES);
+    }
   });
 });

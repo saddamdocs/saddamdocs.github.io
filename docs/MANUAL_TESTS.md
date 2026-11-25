@@ -134,3 +134,44 @@ At NEXT_URL in the installed "Tamanduá (next)" window. Keep a small test folder
 
 - [x] **W-M2-1 Export on Windows.** Export the vault and open the `.zip` in Explorer: accented names
       (ação, coração) are correct and every note opens in Notepad.
+
+## M3a: sync, part 1
+
+You need two Brave profiles on Fedora (Brave menu → Profiles → Add): your usual one, which already
+has the next app with test notes, and a new empty one. Use only test notes and a test passphrase.
+
+### Before the checks: publish the rules to the test database (PLAN 1.5)
+
+Firebase console → the **test** project (`tamandua-test`) → Build → Realtime Database → Rules.
+Replace everything with the contents of `database.rules.json` from the repository (identical to
+Appendix B) and press Publish. Do not touch the production project.
+
+### Fedora
+
+- [ ] **F-M3a-1 Start syncing.** Profile 1, NEXT_URL: Settings → Sync → fill in a test passphrase
+      twice → "Create the vault". The key appears in groups of four with "Copy key"; save the key and
+      the passphrase in your password manager (Brave offers to save the form). The status bar chip
+      goes "Syncing…" then "Synced".
+- [ ] **F-M3a-2 Connect.** Profile 2, NEXT_URL: "Connect to my vault", paste the key (spaces are
+      fine), the passphrase, a device name. A wrong passphrase is refused with a message first. With
+      the right one, the tree fills in, images included (open one with "Show all files").
+- [ ] **F-M3a-3 Live edits.** Open the same note in both windows. Type in profile 1: within about 5 s
+      the text appears in profile 2 without a reload, and its cursor stays where it was. Ctrl+Z in
+      profile 2 does not undo profile 1's typing.
+- [ ] **F-M3a-4 Tree changes.** Rename, create and move notes in profile 1: profile 2's tree follows
+      within 30 s, and at once when you click into its window.
+- [ ] **F-M3a-5 Offline.** Turn the network off, edit in profile 1: the chip says "Offline · 1
+      waiting". Turn it back on: "Synced", and the edit reaches profile 2.
+- [ ] **F-M3a-6 A conflict waits.** Turn the network off, edit the same note in both profiles, turn
+      it on. One profile's chip details list the note as "waiting for a merge" and nothing is lost on
+      either side. (Merging arrives in M3b.)
+- [ ] **F-M3a-7 The database holds only ciphertext.** In the Firebase console → test database →
+      Data, open `/tamandua/<your key>/items`: names and texts are unreadable base64; only ids,
+      revisions, times, sizes and kinds are plain.
+- [ ] **F-M3a-8 Recovery tool.** From the repository folder, run the command below and type the
+      passphrase. The folder holds your test notes as `.md` files.
+
+      ```bash
+      node tools/recover.mjs --key <key> --out ~/recovered-test \
+        --url https://tamandua-test-default-rtdb.europe-west1.firebasedatabase.app
+      ```

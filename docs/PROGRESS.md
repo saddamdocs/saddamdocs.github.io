@@ -9,7 +9,8 @@ Updated at the end of every session (PLAN 10, "Process").
 | M0         | Accepted by Felipe on 20 November 2026; tagged `m0`                                                  |
 | M1         | Accepted by Felipe on 24 November 2026, with the tree indent and gear changes; tagged `m1`           |
 | M2         | Accepted by Felipe on 25 November 2026, with the tree layout of his Obsidian screenshot; tagged `m2` |
-| M3a to M11 | Not started                                                                                          |
+| M3a        | Built; waiting for Felipe's checks (rules to the test database first)                                |
+| M3b to M11 | Not started                                                                                          |
 
 ## M0: environment, skeleton and deploy
 
@@ -65,9 +66,27 @@ Branch `m2-saving-transfer`.
 | 8   | Fixtures of section 8 for import; R12 round-trip test; abrupt-close test                                                                 | done           |
 | 9   | Docs and gate                                                                                                                            | done; accepted |
 
+## M3a: sync, part 1 (format, rules and transport)
+
+Branch `m3a-sync-transport`.
+
+| #   | Task                                                                                                                                          | State                     |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| 1   | `sync/crypto.ts`: PBKDF2, AES-GCM seals with AAD, deflate-raw; test vectors in `tests/unit/crypto-vectors.json`                               | done                      |
+| 2   | `sync/format.ts`: local items ↔ database records, validation, limits                                                                          | done                      |
+| 3   | `sync/rest.ts`: every request of 5.8, response classes, timeouts, retries, four at a time; `sync/stream.ts`                                   | done                      |
+| 4   | `sync/engine.ts`: upload schedule of 5.8, push, pull for every kind, blobs, catch-up, own uploads; records that meet local edits wait for M3b | done                      |
+| 5   | `sync/keys.ts`: "Start a new synced vault" (welcome and Settings → Sync), "Connect to my vault" for a device with no notes                    | done                      |
+| 6   | Sync chip and its details; remote changes applied in place to an open, clean note                                                             | done                      |
+| 7   | Rules tests for every rule of Appendix B (completing M0's)                                                                                    | done                      |
+| 8   | `tools/recover.mjs` and its format-1 fixture                                                                                                  | done                      |
+| 9   | Sync tests against the emulator (two devices; I1, I3, I6, I7; offline; closed mid-upload; budgets)                                            | done                      |
+| 10  | Docs and gate (rules to the test database by Felipe)                                                                                          | done; gate pending Felipe |
+
 ## Next
 
-- M3a: sync, part 1 (format, rules and transport).
+- Felipe publishes the rules to the test database and runs the M3a checks.
+- After acceptance: tag `m3a`, then M3b (merges and deletions, the simulation).
 
 ## Blockers
 
