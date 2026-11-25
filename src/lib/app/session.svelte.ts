@@ -523,12 +523,16 @@ export class Session {
   }
 
   /** "Later" on the reminder: waits a day (PLAN 4.15). */
-  snoozeReminder(): void {
-    this.snoozedUntil = Date.now() + DAY_MS;
-    this.reminder = false;
-    writeState(this.vault.db, 'exportSnoozedUntil', this.snoozedUntil).catch((error: unknown) =>
-      this.fail('snooze-failed', error),
-    );
+  async snoozeReminder(): Promise<void> {
+    const until = Date.now() + DAY_MS;
+    try {
+      // Hide only once stored: a reload right after "Later" must not bring the banner back.
+      await writeState(this.vault.db, 'exportSnoozedUntil', until);
+      this.snoozedUntil = until;
+      this.reminder = false;
+    } catch (error) {
+      this.fail('snooze-failed', error);
+    }
   }
 
   /**
