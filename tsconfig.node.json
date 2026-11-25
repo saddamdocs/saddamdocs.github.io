@@ -17,6 +17,9 @@
     "resolveJsonModule": true,
     "noEmit": true
   },
+  // scripts/format1-fixture.ts runs with --experimental-transform-types and is checked by
+  // tsconfig.test.json, because it imports app modules with parameter properties.
+  "exclude": ["scripts/format1-fixture.ts"],
   "include": [
     "vite.config.ts",
     "vitest.config.ts",

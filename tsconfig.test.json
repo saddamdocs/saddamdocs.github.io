@@ -5,5 +5,11 @@
   "compilerOptions": {
     "types": ["vite/client", "vite-plugin-pwa/vanillajs", "node"]
   },
-  "include": ["src/**/*.ts", "src/**/*.svelte", "tests/unit/**/*.ts", "tests/sync/**/*.ts"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.svelte",
+    "tests/unit/**/*.ts",
+    "tests/sync/**/*.ts",
+    "scripts/format1-fixture.ts"
+  ]
 }

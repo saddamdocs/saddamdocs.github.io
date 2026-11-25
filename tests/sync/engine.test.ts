@@ -15,6 +15,12 @@ import { SV } from '../../src/lib/sync/format.ts';
 import { REFUSED_MESSAGE, SyncEngine, type EngineTiming } from '../../src/lib/sync/engine.ts';
 import { Rest } from '../../src/lib/sync/rest.ts';
 import { Vault } from '../../src/lib/vault/operations.ts';
+import { planExport, readExport } from '../../src/lib/transfer/exportZip.ts';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   EMULATOR_URL,
   LOCKED_RULES,
@@ -36,6 +42,7 @@ const FAST: EngineTiming = {
 };
 
 const ns = namespace('sync');
+const PASSPHRASE = 'test passphrase, not a real one';
 let key: string;
 let cryptoKey: CryptoKey;
 let dbCount = 0;
@@ -96,7 +103,7 @@ beforeAll(async () => {
 beforeEach(async () => {
   key = randomKey();
   const salt = newSalt();
-  cryptoKey = await deriveKey('test passphrase, not a real one', salt);
+  cryptoKey = await deriveKey(PASSPHRASE, salt);
   // A vault exists once `info` is written ("Start a new synced vault", PLAN 4.5).
   const res = await rest(
     'PUT',
@@ -345,5 +352,63 @@ describe('keys and passphrases (PLAN 4.5)', () => {
     await b.engine.downloadAll((done) => seen.push(done));
     expect(await snapshot(b.vault)).toEqual(await snapshot(a.vault));
     expect(seen.length).toBeGreaterThan(0);
+  });
+});
+
+describe('tools/recover.mjs against the emulator (PLAN 4.15)', () => {
+  it('rebuilds from the database exactly what Export vault writes, read-only', async () => {
+    const a = await device('A');
+    const f = ok(await a.vault.createFolder('', 'Ideias'));
+    const n = ok(await a.vault.createNote(f.id, 'Ação'));
+    await a.vault.saveText(n.id, 'Texto com acentos: ação.');
+    await a.vault.importItems(f.id, [
+      {
+        kind: 'file',
+        name: 'mapa.png',
+        parent: -1,
+        bytes: new Uint8Array([1, 2, 3]),
+        mime: 'image/png',
+      },
+    ]);
+    const gone = ok(await a.vault.createNote('', 'Lixo'));
+    await a.vault.delete(gone.id);
+    await a.engine.syncNow();
+    expect(a.vault.dirtyItems()).toEqual([]);
+
+    const out = mkdtempSync(join(tmpdir(), 'tamandua-recover-url-'));
+    try {
+      const tool = fileURLToPath(new URL('../../tools/recover.mjs', import.meta.url));
+      const run = spawnSync(
+        process.execPath,
+        [tool, '--url', EMULATOR_URL, '--key', key, '--ns', ns, '--out', out],
+        {
+          input: `${PASSPHRASE}\n`,
+          encoding: 'utf8',
+        },
+      );
+      expect(run.stderr).toBe('');
+      expect(run.status).toBe(0);
+      const got: Record<string, string> = {};
+      const walk = (d: string): void => {
+        for (const name of readdirSync(d)) {
+          const full = join(d, name);
+          if (statSync(full).isDirectory()) {
+            got[`${relative(out, full)}/`] = '';
+            walk(full);
+          } else got[relative(out, full)] = readFileSync(full).toString('base64');
+        }
+      };
+      walk(out);
+      const { entries } = await readExport(a.vault, planExport(a.vault.index, '', true));
+      const want = Object.fromEntries(
+        Object.entries(entries).map(([p, b]) => [
+          p,
+          p.endsWith('/') ? '' : Buffer.from(b).toString('base64'),
+        ]),
+      );
+      expect(got).toEqual(want);
+    } finally {
+      rmSync(out, { recursive: true, force: true });
+    }
   });
 });
